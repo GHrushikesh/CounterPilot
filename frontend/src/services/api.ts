@@ -1,4 +1,13 @@
-import type { HealthResponse, PaginatedResponse, Product, ProductQueryParams, InventorySummary } from '../types';
+import type {
+  HealthResponse,
+  PaginatedResponse,
+  Product,
+  ProductQueryParams,
+  InventorySummary,
+  Sale,
+  SaleCreatePayload,
+  TransactionItem,
+} from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
@@ -71,5 +80,24 @@ export const apiService = {
 
   getProductSummary: async (): Promise<InventorySummary> => {
     return request<InventorySummary>('products/summary');
+  },
+
+  createSale: async (payload: SaleCreatePayload): Promise<Sale> => {
+    return request<Sale>('sales', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  getSales: async (page = 1, pageSize = 10): Promise<PaginatedResponse<Sale>> => {
+    return request<PaginatedResponse<Sale>>(`sales?page=${page}&page_size=${pageSize}`);
+  },
+
+  getSale: async (id: number): Promise<Sale> => {
+    return request<Sale>(`sales/${id}`);
+  },
+
+  getTransactions: async (page = 1, pageSize = 20): Promise<PaginatedResponse<TransactionItem>> => {
+    return request<PaginatedResponse<TransactionItem>>(`transactions?page=${page}&page_size=${pageSize}`);
   },
 };

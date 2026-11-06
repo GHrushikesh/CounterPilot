@@ -152,3 +152,83 @@ def test_product_deletion_restricted_with_transactions(db_session):
     with pytest.raises(IntegrityError):
         db_session.commit()
     db_session.rollback()
+
+
+def test_record_sale_and_inventory_deduction(client, seeded_db):
+    """Verify recording counter sale deducts stock and logs inventory audit transaction."""
+    # Find a product: Colgate Strong Teeth (Stock: 18.00)
+    colgate = seeded_db.query(Product).filter(Product.sku == "COLG-ST-200G").first()
+    assert colgate.current_stock == Decimal("18.00")
+
+    payload = {
+        "items": [
+            {"product_id": colgate.id, "quantity": 3.0}
+        ],
+        "discount_amount": 10.0,
+        "payment_method": "UPI",
+        "customer_name": "Ramesh Kumar",
+        "customer_phone": "9876543210",
+    }
+
+    response = client.post("/api/sales", json=payload)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["invoice_number"].startswith("INV-")
+    assert data["payment_method"] == "UPI"
+    assert data["customer_name"] == "Ramesh Kumar"
+    # 3 * 120.00 = 360.00, discount 10.00 => total 350.00
+    assert Decimal(str(data["subtotal"])) == Decimal("360.00")
+    assert Decimal(str(data["total_amount"])) == Decimal("350.00")
+
+    # Check stock decreased from 18 to 15
+    seeded_db.refresh(colgate)
+    assert colgate.current_stock == Decimal("15.00")
+
+    # Check InventoryTransaction exists
+    tx = (
+        seeded_db.query(InventoryTransaction)
+        .filter(InventoryTransaction.product_id == colgate.id, InventoryTransaction.transaction_type == "SALE")
+        .first()
+    )
+    assert tx is not None
+    assert tx.quantity == Decimal("3.00")
+    assert tx.previous_stock == Decimal("18.00")
+    assert tx.new_stock == Decimal("15.00")
+    assert "Counter sale invoice" in tx.note
+
+
+def test_record_sale_insufficient_stock(client, seeded_db):
+    """Verify sale is rejected if requested quantity exceeds current stock."""
+    # Aashirvaad Atta has 3 bags in stock
+    atta = seeded_db.query(Product).filter(Product.sku == "AASH-ATTA-5KG").first()
+    assert atta.current_stock == Decimal("3.00")
+
+    payload = {
+        "items": [
+            {"product_id": atta.id, "quantity": 10.0}
+        ],
+        "payment_method": "CASH",
+    }
+    response = client.post("/api/sales", json=payload)
+    assert response.status_code == 400
+    err = response.json()
+    assert "Insufficient stock" in err["message"]
+
+    # Stock must remain unchanged
+    seeded_db.refresh(atta)
+    assert atta.current_stock == Decimal("3.00")
+
+
+def test_get_transactions_audit_log(client, seeded_db):
+    """Verify GET /api/transactions returns audit trail."""
+    response = client.get("/api/transactions")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] >= 10
+    first = data["items"][0]
+    assert "product_name" in first
+    assert "transaction_type" in first
+    assert "previous_stock" in first
+    assert "new_stock" in first
+
+

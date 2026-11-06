@@ -44,3 +44,4 @@ export const StockBadge: React.FC<StockBadgeProps> = ({
     </Badge>
   );
 };
+

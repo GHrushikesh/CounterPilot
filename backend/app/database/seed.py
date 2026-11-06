@@ -164,3 +164,4 @@ if __name__ == "__main__":
     with SessionLocal() as db_session:
         res = seed_database(db_session)
         print(f"Seed completed: {res}")
+

@@ -190,3 +190,4 @@ With the technical foundation in place, recommended milestones for Phase 2 are:
 2. **Conversational AI Assistant:** Integrating natural language understanding for voice and chat queries ("Which items are low in stock?", "Record 2 packets of Maggi sold").
 3. **Receipt Generation:** Thermal print formatting (58mm/80mm) and WhatsApp/UPI shareable receipts.
 4. **Supplier Invoice Intake:** Parsing paper supplier invoices to automate bulk stock restocks.
+

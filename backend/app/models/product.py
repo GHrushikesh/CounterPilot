@@ -65,3 +65,4 @@ class Product(Base):
 
     def __repr__(self):
         return f"<Product(id={self.id}, name='{self.name}', sku='{self.sku}', stock={self.current_stock})>"
+

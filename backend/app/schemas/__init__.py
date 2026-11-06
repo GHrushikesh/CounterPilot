@@ -6,6 +6,12 @@ from app.schemas.product import (
     ProductResponse,
     InventoryTransactionResponse,
 )
+from app.schemas.sale import (
+    SaleCreate,
+    SaleItemCreate,
+    SaleResponse,
+    SaleItemResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -15,4 +21,8 @@ __all__ = [
     "ProductUpdate",
     "ProductResponse",
     "InventoryTransactionResponse",
+    "SaleCreate",
+    "SaleItemCreate",
+    "SaleResponse",
+    "SaleItemResponse",
 ]

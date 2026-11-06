@@ -65,3 +65,4 @@ class InventoryTransaction(Base):
             f"<InventoryTransaction(id={self.id}, product_id={self.product_id}, "
             f"type='{self.transaction_type}', qty={self.quantity}, new_stock={self.new_stock})>"
         )
+

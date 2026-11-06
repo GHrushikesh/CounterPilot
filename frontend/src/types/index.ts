@@ -40,3 +40,52 @@ export interface ProductQueryParams {
   category?: string;
   low_stock?: boolean;
 }
+
+export interface SaleItem {
+  id: number;
+  sale_id: number;
+  product_id: number;
+  product_name: string;
+  unit_price: string | number;
+  quantity: string | number;
+  total_price: string | number;
+}
+
+export interface Sale {
+  id: number;
+  invoice_number: string;
+  subtotal: string | number;
+  discount_amount: string | number;
+  tax_amount: string | number;
+  total_amount: string | number;
+  payment_method: 'CASH' | 'UPI' | 'CARD' | 'KHATA' | string;
+  customer_name: string | null;
+  customer_phone: string | null;
+  status: string;
+  created_at: string;
+  items: SaleItem[];
+}
+
+export interface SaleCreatePayload {
+  items: {
+    product_id: number;
+    quantity: number;
+  }[];
+  discount_amount?: number;
+  payment_method: string;
+  customer_name?: string;
+  customer_phone?: string;
+}
+
+export interface TransactionItem {
+  id: number;
+  product_id: number;
+  product_name: string;
+  product_unit: string;
+  transaction_type: string;
+  quantity: string | number;
+  previous_stock: string | number;
+  new_stock: string | number;
+  note: string | null;
+  created_at: string;
+}

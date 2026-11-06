@@ -57,3 +57,4 @@ def create_product(
 ) -> ProductResponse:
     """Create a new product with inventory audit logging."""
     return ProductService.create_product(db, payload)
+

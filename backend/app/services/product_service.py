@@ -121,3 +121,4 @@ class ProductService:
             "low_stock_count": low_stock_count,
             "categories_count": categories_count,
         }
+

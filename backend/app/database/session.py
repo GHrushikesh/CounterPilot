@@ -40,5 +40,7 @@ def init_db() -> None:
     # Import all models to ensure they are registered with Base.metadata
     from app.models.product import Product  # noqa: F401
     from app.models.inventory_transaction import InventoryTransaction  # noqa: F401
+    from app.models.sale import Sale, SaleItem  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
+

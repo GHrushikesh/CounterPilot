@@ -8,3 +8,4 @@ router = APIRouter()
 def health_check() -> HealthResponse:
     """System health check endpoint."""
     return HealthResponse(status="ok", application="CounterPilot")
+

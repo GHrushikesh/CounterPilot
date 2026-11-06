@@ -9,9 +9,10 @@ import {
   Activity,
   CheckCircle2,
   RefreshCw,
+  ShoppingCart,
 } from 'lucide-react';
 import { apiService } from '../services/api';
-import type { Product, InventorySummary } from '../types';
+import type { Product, InventorySummary, Sale } from '../types';
 import { ProductTable } from '../components/inventory/ProductTable';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { EmptyState } from '../components/common/EmptyState';
@@ -20,6 +21,7 @@ export const DashboardPage: React.FC = () => {
   const [summary, setSummary] = useState<InventorySummary | null>(null);
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
+  const [recentSales, setRecentSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,14 +29,16 @@ export const DashboardPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [summaryRes, productsRes, lowStockRes] = await Promise.all([
+      const [summaryRes, productsRes, lowStockRes, salesRes] = await Promise.all([
         apiService.getProductSummary(),
         apiService.getProducts({ page: 1, page_size: 5 }),
         apiService.getProducts({ low_stock: true, page_size: 5 }),
+        apiService.getSales(1, 5),
       ]);
       setSummary(summaryRes);
       setRecentProducts(productsRes.items);
       setLowStockProducts(lowStockRes.items);
+      setRecentSales(salesRes.items);
     } catch (err: any) {
       setError(err.message || 'Unable to load dashboard data from backend.');
     } finally {
@@ -46,6 +50,15 @@ export const DashboardPage: React.FC = () => {
     loadDashboardData();
   }, []);
 
+  const formatCurrency = (val: string | number) => {
+    const num = typeof val === 'number' ? val : parseFloat(val);
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+    }).format(num);
+  };
+
   return (
     <div className="space-y-6">
       {/* Welcome Heading */}
@@ -55,17 +68,26 @@ export const DashboardPage: React.FC = () => {
             Welcome back, Ujjam Computers
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Real-time retail inventory overview and technical foundation status.
+            Real-time retail inventory overview, counter billing, and system status.
           </p>
         </div>
-        <button
-          onClick={loadDashboardData}
-          disabled={loading}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-md transition-colors shadow-2xs self-start sm:self-auto"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-emerald-600' : ''}`} />
-          <span>Refresh</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/sales"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors shadow-2xs"
+          >
+            <ShoppingCart className="w-3.5 h-3.5" />
+            <span>New Counter Bill</span>
+          </Link>
+          <button
+            onClick={loadDashboardData}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-md transition-colors shadow-2xs"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-emerald-600' : ''}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
 
       {/* Error Banner if API unreachable */}
@@ -94,14 +116,14 @@ export const DashboardPage: React.FC = () => {
                   CounterPilot AI Assistant
                 </h3>
                 <span className="text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                  Phase 2 Feature
+                  Ready for Assistant Module
                 </span>
               </div>
               <p className="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
-                Run your shop through natural conversation. Soon you will be able to ask questions like:
-                <span className="italic text-slate-800"> "Which items are below minimum stock?"</span>,{' '}
-                <span className="italic text-slate-800">"What did we order most last week?"</span>, or{' '}
-                <span className="italic text-slate-800">"Record sale of 2 Maggi packets"</span>.
+                Run your shop through natural conversation. Query live stock:{' '}
+                <span className="italic text-slate-800">"Which items are below minimum stock?"</span>,{' '}
+                <span className="italic text-slate-800">"What did we bill most today?"</span>, or{' '}
+                <span className="italic text-slate-800">"Record counter cash sale of 2 Maggi packets"</span>.
               </p>
             </div>
           </div>
@@ -167,10 +189,10 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Grid: Inventory Overview & Low Stock alerts */}
+      {/* Main Grid: Inventory Overview & Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Quick Inventory Overview */}
-        <div className="lg:col-span-2 space-y-4">
+        {/* Left 2 Cols: Inventory Overview & Sales Activity */}
+        <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -203,25 +225,81 @@ export const DashboardPage: React.FC = () => {
             )}
           </div>
 
-          {/* Recent Activity: Authentic Empty State */}
+          {/* Recent Activity: Shows Real Sales If Present */}
           <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs">
-            <div className="mb-4">
-              <h2 className="text-sm font-semibold text-slate-900">
-                Recent Sales & Activity
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Audit trail of counter sales and billing receipts
-              </p>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Recent Sales & Activity
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Live counter sales transactions and billing receipts
+                </p>
+              </div>
+              <Link
+                to="/sales"
+                className="text-xs font-medium text-emerald-700 hover:text-emerald-800 flex items-center gap-1"
+              >
+                <span>Counter POS</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
-            <EmptyState
-              icon={Activity}
-              title="No Sales Transactions Recorded"
-              description="No counter sales or transactions have been recorded yet. Live transaction history will appear here once the sales module is enabled in Phase 2."
-            />
+
+            {loading ? (
+              <LoadingSpinner label="Checking recent sales..." />
+            ) : recentSales.length > 0 ? (
+              <div className="overflow-x-auto rounded-md border border-slate-200">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
+                    <tr>
+                      <th className="py-2.5 px-3">Invoice</th>
+                      <th className="py-2.5 px-3">Date</th>
+                      <th className="py-2.5 px-3">Customer</th>
+                      <th className="py-2.5 px-3">Payment</th>
+                      <th className="py-2.5 px-3 text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {recentSales.map((sale) => (
+                      <tr key={sale.id} className="hover:bg-slate-50">
+                        <td className="py-2.5 px-3 font-mono font-medium text-slate-900">
+                          {sale.invoice_number}
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-500">
+                          {new Date(sale.created_at).toLocaleTimeString('en-IN', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-700">
+                          {sale.customer_name || 'Walk-in'}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            {sale.payment_method}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                          {formatCurrency(sale.total_amount)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <EmptyState
+                icon={Activity}
+                title="No Sales Transactions Recorded Yet"
+                description="No counter sales recorded yet. Click 'New Counter Bill' above to record your first sale."
+                actionText="Go to Counter POS"
+                onAction={() => window.location.assign('/sales')}
+              />
+            )}
           </div>
         </div>
 
-        {/* Right 1 Col: Urgent Low Stock Restock Panel */}
+        {/* Right 1 Col: Low Stock Alerts & Summary */}
         <div className="space-y-6">
           <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs">
             <div className="flex items-center gap-2 mb-3">
@@ -231,7 +309,7 @@ export const DashboardPage: React.FC = () => {
               </h2>
             </div>
             <p className="text-xs text-slate-500 mb-4">
-              These items require replenishment based on defined minimum stock thresholds.
+              Items requiring replenishment based on minimum stock threshold.
             </p>
 
             {loading ? (
@@ -272,24 +350,24 @@ export const DashboardPage: React.FC = () => {
           {/* Architecture Status Card */}
           <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
             <h3 className="text-xs font-semibold text-slate-800 mb-2">
-              System Health & Architecture
+              CounterPilot Operating Engine
             </h3>
             <ul className="space-y-1.5 text-[11px] text-slate-600">
               <li className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>FastAPI backend with Pydantic validation</span>
+                <span>Instant counter checkout with stock deduction</span>
               </li>
               <li className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>SQLite relational storage with Decimal accuracy</span>
+                <span>Cash, UPI, Card, and Khata payments</span>
               </li>
               <li className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Foreign key delete-restriction on audit records</span>
+                <span>Thermal receipt printing (58mm / 80mm)</span>
               </li>
               <li className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Repeatable idempotent sample retail dataset</span>
+                <span>Atomic stock rollback on insufficient inventory</span>
               </li>
             </ul>
           </div>
