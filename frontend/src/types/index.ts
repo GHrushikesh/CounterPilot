@@ -61,6 +61,7 @@ export interface Sale {
   payment_method: 'CASH' | 'UPI' | 'CARD' | 'KHATA' | string;
   customer_name: string | null;
   customer_phone: string | null;
+  idempotency_key?: string | null;
   status: string;
   created_at: string;
   items: SaleItem[];
@@ -75,6 +76,7 @@ export interface SaleCreatePayload {
   payment_method: string;
   customer_name?: string;
   customer_phone?: string;
+  idempotency_key?: string;
 }
 
 export interface TransactionItem {

@@ -41,6 +41,9 @@ export const SalesPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Client-generated unique checkout request ID for idempotency
+  const [checkoutId, setCheckoutId] = useState<string>(() => crypto.randomUUID());
+
   // Completed Sale for Receipt
   const [completedSale, setCompletedSale] = useState<Sale | null>(null);
 
@@ -133,6 +136,7 @@ export const SalesPage: React.FC = () => {
     setCustomerName('');
     setCustomerPhone('');
     setErrorMsg(null);
+    setCheckoutId(crypto.randomUUID());
   };
 
   // Calculations
@@ -173,6 +177,7 @@ export const SalesPage: React.FC = () => {
         payment_method: paymentMethod,
         customer_name: customerName.trim() || undefined,
         customer_phone: customerPhone.trim() || undefined,
+        idempotency_key: checkoutId,
       };
 
       const sale = await apiService.createSale(payload);

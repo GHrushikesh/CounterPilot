@@ -32,6 +32,7 @@ class Sale(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     invoice_number = Column(String(50), unique=True, index=True, nullable=False)
+    idempotency_key = Column(String(100), unique=True, index=True, nullable=True)
     
     subtotal = Column(Numeric(precision=10, scale=2, asdecimal=True), nullable=False)
     discount_amount = Column(Numeric(precision=10, scale=2, asdecimal=True), nullable=False, default=Decimal("0.00"))

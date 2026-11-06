@@ -36,11 +36,21 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def init_db() -> None:
-    """Safely initialize all database tables."""
+    """Safely initialize all database tables and schema migrations."""
     # Import all models to ensure they are registered with Base.metadata
     from app.models.product import Product  # noqa: F401
     from app.models.inventory_transaction import InventoryTransaction  # noqa: F401
     from app.models.sale import Sale, SaleItem  # noqa: F401
+    from app.models.idempotency import IdempotencyRecord  # noqa: F401
+    from app.models.invoice_sequence import DailyInvoiceSequence  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
+
+    # Non-destructive SQLite column migration for sales table
+    with engine.connect() as conn:
+        cursor = conn.exec_driver_sql("PRAGMA table_info(sales)")
+        cols = [r[1] for r in cursor.fetchall()]
+        if cols and "idempotency_key" not in cols:
+            conn.exec_driver_sql("ALTER TABLE sales ADD COLUMN idempotency_key VARCHAR(100)")
+            conn.commit()
 

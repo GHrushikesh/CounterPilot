@@ -232,3 +232,185 @@ def test_get_transactions_audit_log(client, seeded_db):
     assert "new_stock" in first
 
 
+def test_multiline_checkout_failure_atomicity(client, seeded_db):
+    """Verify that failure on any order line completely rolls back all stock deductions."""
+    colgate = seeded_db.query(Product).filter(Product.sku == "COLG-ST-200G").first()
+    atta = seeded_db.query(Product).filter(Product.sku == "AASH-ATTA-5KG").first()
+
+    colgate_stock_initial = colgate.current_stock
+    atta_stock_initial = atta.current_stock
+
+    payload = {
+        "items": [
+            {"product_id": colgate.id, "quantity": 2.0},  # Valid quantity (stock is 18)
+            {"product_id": atta.id, "quantity": 999.0},  # Exceeds available stock (stock is 3)
+        ],
+        "payment_method": "CASH",
+    }
+    response = client.post("/api/sales", json=payload)
+    assert response.status_code == 400
+    assert "Insufficient stock" in response.json()["message"]
+
+    # Verify no stock was deducted from colgate despite being first in line
+    seeded_db.refresh(colgate)
+    seeded_db.refresh(atta)
+    assert colgate.current_stock == colgate_stock_initial
+    assert atta.current_stock == atta_stock_initial
+
+
+def test_discount_greater_than_subtotal_clamping(client, seeded_db):
+    """Verify discount larger than subtotal is clamped and total payable is 0 without DB constraint error."""
+    parle = seeded_db.query(Product).filter(Product.sku == "PARLE-G-250G").first()
+    initial_stock = parle.current_stock
+
+    payload = {
+        "items": [{"product_id": parle.id, "quantity": 1.0}],  # Selling price is 30.00
+        "discount_amount": 100.0,  # Exceeds subtotal (30.00)
+        "payment_method": "CASH",
+    }
+    response = client.post("/api/sales", json=payload)
+    assert response.status_code == 201
+    data = response.json()
+    assert Decimal(str(data["subtotal"])) == Decimal("30.00")
+    assert Decimal(str(data["discount_amount"])) == Decimal("30.00")
+    assert Decimal(str(data["total_amount"])) == Decimal("0.00")
+
+    seeded_db.refresh(parle)
+    assert parle.current_stock == initial_stock - Decimal("1.00")
+
+
+def test_inactive_product_rejection(client, seeded_db):
+    """Verify inactive/soft-deleted product cannot be purchased."""
+    product = seeded_db.query(Product).first()
+    product.is_active = False
+    seeded_db.commit()
+
+    payload = {
+        "items": [{"product_id": product.id, "quantity": 1.0}],
+        "payment_method": "CASH",
+    }
+    response = client.post("/api/sales", json=payload)
+    assert response.status_code == 404
+    assert "inactive" in response.json()["message"].lower()
+
+
+def test_invalid_payment_method_rejection(client, seeded_db):
+    """Verify rejection of unlisted payment methods with HTTP 400."""
+    product = seeded_db.query(Product).first()
+    payload = {
+        "items": [{"product_id": product.id, "quantity": 1.0}],
+        "payment_method": "BITCOIN",
+    }
+    response = client.post("/api/sales", json=payload)
+    assert response.status_code == 400
+    assert "Invalid payment method" in response.json()["message"]
+
+
+def test_duplicate_checkout_same_idempotency_key(client, seeded_db):
+    """Verify duplicate checkout with same key and payload returns existing sale without double stock deduction."""
+    product = seeded_db.query(Product).filter(Product.sku == "TATA-SALT-1KG").first()
+    initial_stock = product.current_stock
+
+    payload = {
+        "items": [{"product_id": product.id, "quantity": 2.0}],
+        "payment_method": "CASH",
+        "customer_name": "Idempotent User",
+        "idempotency_key": "IDEM-TEST-KEY-001",
+    }
+
+    # First request
+    res1 = client.post("/api/sales", json=payload)
+    assert res1.status_code == 201
+    data1 = res1.json()
+    invoice1 = data1["invoice_number"]
+
+    seeded_db.refresh(product)
+    assert product.current_stock == initial_stock - Decimal("2.00")
+
+    # Second request with identical idempotency key and payload
+    res2 = client.post("/api/sales", json=payload)
+    assert res2.status_code in [200, 201]
+    data2 = res2.json()
+    assert data2["invoice_number"] == invoice1
+    assert data2["id"] == data1["id"]
+
+    # Stock MUST NOT be deducted a second time
+    seeded_db.refresh(product)
+    assert product.current_stock == initial_stock - Decimal("2.00")
+
+
+def test_same_idempotency_key_different_payload_conflict(client, seeded_db):
+    """Verify reusing same idempotency key with different payload returns HTTP 409 Conflict."""
+    p1 = seeded_db.query(Product).filter(Product.sku == "TATA-SALT-1KG").first()
+    p2 = seeded_db.query(Product).filter(Product.sku == "MAGGI-MAS-70G").first()
+
+    payload1 = {
+        "items": [{"product_id": p1.id, "quantity": 1.0}],
+        "payment_method": "CASH",
+        "idempotency_key": "IDEM-CONFLICT-KEY-002",
+    }
+    res1 = client.post("/api/sales", json=payload1)
+    assert res1.status_code == 201
+
+    # Same key but completely different product/payload
+    payload2 = {
+        "items": [{"product_id": p2.id, "quantity": 2.0}],
+        "payment_method": "UPI",
+        "idempotency_key": "IDEM-CONFLICT-KEY-002",
+    }
+    res2 = client.post("/api/sales", json=payload2)
+    assert res2.status_code == 409
+    assert res2.json()["error_code"] == "CONFLICT"
+
+
+def test_different_idempotency_keys_create_independent_sales(client, seeded_db):
+    """Verify two different checkout keys create two independent sales."""
+    product = seeded_db.query(Product).filter(Product.sku == "DETT-SOAP-125G").first()
+    initial_stock = product.current_stock
+
+    payload1 = {
+        "items": [{"product_id": product.id, "quantity": 1.0}],
+        "payment_method": "CASH",
+        "idempotency_key": "KEY-ALPHA-001",
+    }
+    payload2 = {
+        "items": [{"product_id": product.id, "quantity": 1.0}],
+        "payment_method": "CASH",
+        "idempotency_key": "KEY-BETA-002",
+    }
+
+    res1 = client.post("/api/sales", json=payload1)
+    res2 = client.post("/api/sales", json=payload2)
+
+    assert res1.status_code == 201
+    assert res2.status_code == 201
+    assert res1.json()["invoice_number"] != res2.json()["invoice_number"]
+
+    seeded_db.refresh(product)
+    assert product.current_stock == initial_stock - Decimal("2.00")
+
+
+def test_invoice_number_uniqueness_and_progression(client, seeded_db):
+    """Verify sequential invoice number generation and uniqueness."""
+    product = seeded_db.query(Product).filter(Product.sku == "FORT-OIL-1L").first()
+    invoices = []
+
+    for i in range(3):
+        payload = {
+            "items": [{"product_id": product.id, "quantity": 1.0}],
+            "payment_method": "CASH",
+            "idempotency_key": f"KEY-SEQ-{i}",
+        }
+        res = client.post("/api/sales", json=payload)
+        assert res.status_code == 201
+        invoices.append(res.json()["invoice_number"])
+
+    assert len(invoices) == 3
+    assert len(set(invoices)) == 3
+    # Check format INV-YYYYMMDD-XXXX
+    for inv in invoices:
+        assert inv.startswith("INV-")
+        assert len(inv.split("-")[-1]) == 4
+
+
+

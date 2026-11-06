@@ -15,6 +15,7 @@ class SaleCreate(BaseModel):
     payment_method: str = Field(default="CASH", description="Payment method: CASH, UPI, CARD, KHATA")
     customer_name: Optional[str] = Field(None, max_length=100)
     customer_phone: Optional[str] = Field(None, max_length=20)
+    idempotency_key: Optional[str] = Field(None, max_length=100, description="Client token to prevent duplicate billing")
 
 
 class SaleItemResponse(BaseModel):
@@ -39,6 +40,7 @@ class SaleResponse(BaseModel):
     payment_method: str
     customer_name: Optional[str] = None
     customer_phone: Optional[str] = None
+    idempotency_key: Optional[str] = None
     status: str
     created_at: datetime
     items: List[SaleItemResponse]

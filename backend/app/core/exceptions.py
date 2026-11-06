@@ -23,6 +23,11 @@ class BadRequestException(CounterPilotException):
         super().__init__(message=message, status_code=status.HTTP_400_BAD_REQUEST, error_code=error_code)
 
 
+class ConflictException(CounterPilotException):
+    def __init__(self, message: str = "Resource conflict", error_code: str = "CONFLICT"):
+        super().__init__(message=message, status_code=status.HTTP_409_CONFLICT, error_code=error_code)
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(CounterPilotException)
     async def custom_exception_handler(request: Request, exc: CounterPilotException):
