@@ -191,6 +191,38 @@ The backend automatically creates the SQLite database file (`counterpilot.db`) a
 
 ---
 
+## Security Architecture and Terminal Hardening
+
+CounterPilot implements defense-in-depth protections across both backend API services and frontend point-of-sale terminal interfaces:
+
+1. SQL Injection (SQLi) Prevention:
+   - All database queries are executed via SQLAlchemy ORM with strictly parameterized query binding.
+   - Malicious input patterns in search terms, category filters, and route IDs are treated as literal strings and cannot break SQL structure.
+
+2. Financial Integrity and Tampering Defenses:
+   - Pydantic schema validation enforces non-negative constraints on purchase prices, selling prices, and quantities.
+   - Restock quantities must be strictly positive values.
+   - Idempotency key tracking blocks double-billing and detects conflicting payload replays with HTTP 409 Conflict.
+   - Atomic SQL transactions automatically roll back changes if stock is insufficient.
+
+3. Cross-Site Scripting (XSS) and Input Sanitization:
+   - String inputs are validated and length-limited at the API boundary.
+   - React 19 JSX rendering automatically escapes untrusted content before DOM insertion.
+
+4. HTTP Security Headers:
+   - `X-Frame-Options: DENY` (prevents clickjacking attacks)
+   - `X-Content-Type-Options: nosniff` (prevents MIME-type sniffing)
+   - `X-XSS-Protection: 1; mode=block` (enables cross-site scripting filter)
+   - `Referrer-Policy: strict-origin-when-cross-origin` (prevents path leakage in referrers)
+   - `Permissions-Policy: geolocation=(), microphone=(), camera=()` (disables unauthorized sensor access)
+
+5. Terminal DevTools Hardening and Source Protection:
+   - Production sourcemaps are disabled (`sourcemap: false`), preventing source tree and `.tsx` file exposure in browser Developer Tools.
+   - Runtime keyboard interceptors restrict common inspect shortcuts (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U) on retail terminals.
+   - Client storage (`localStorage`) is restricted strictly to public store name and presentation preferences with zero credentials or tokens stored.
+
+---
+
 ## Test Verification
 
 CounterPilot includes automated backend testing with pytest and full TypeScript type verification.
@@ -200,14 +232,14 @@ CounterPilot includes automated backend testing with pytest and full TypeScript 
 cd backend
 .venv\Scripts\pytest -q
 ```
-Result: 44 passing tests covering product validations, idempotency, sales concurrency, stock rollback, restock audits, settings persistence, and AI assistant grounding.
+Result: 56 passing tests covering SQL injection resistance, XSS safety, idempotency, sales concurrency, stock rollback, restock audits, settings persistence, security headers, and BharatCode AI assistant grounding.
 
 ### Running Frontend Typecheck & Build
 ```bash
 cd frontend
 npm run build
 ```
-Result: Clean compilation with 0 TypeScript errors.
+Result: Clean compilation with 0 TypeScript errors and sourcemap suppression.
 
 ---
 

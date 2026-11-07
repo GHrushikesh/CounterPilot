@@ -8,6 +8,11 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  build: {
+    // Disable sourcemaps so full source code is not exposed via F12 DevTools
+    sourcemap: false,
+    chunkSizeWarningLimit: 1000,
+  },
   server: {
     port: 5173,
     proxy: {

@@ -8,10 +8,12 @@ import { SalesPage } from './pages/SalesPage';
 import { TransactionsPage } from './pages/TransactionsPage';
 import { AssistantPage } from './pages/AssistantPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { SecurityShield } from './components/common/SecurityShield';
 
 export const App: React.FC = () => {
   return (
     <StoreProvider>
+      <SecurityShield />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<AppLayout />}>
