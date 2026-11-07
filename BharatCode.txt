@@ -51,7 +51,7 @@ TECH STACK
 - Frontend: React 19, TypeScript, Tailwind CSS v4, Motion, Lucide Icons, Vite
 - Backend: FastAPI, Python 3.12, SQLAlchemy, Pydantic v2, Uvicorn
 - Database: SQLite (ACID compliant single-file persistence)
-- AI Engine: BharatCode API (with automatic fallback to Gemini 2.5 Flash Lite)
+- AI Engine: BharatCode API (Official Qwen 3.8 27B model)
 
 ================================================================================
 RUNNING THE APPLICATION
@@ -67,3 +67,4 @@ Frontend:
   cd frontend
   npm install
   npm run dev
+

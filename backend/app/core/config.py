@@ -21,11 +21,6 @@ class Settings(BaseSettings):
     BHARATCODE_MODEL: str = "qwen-3.8-27b"
     BHARATCODE_TIMEOUT_SECONDS: float = 30.0
 
-    # Google Gemini Fallback / Testing Configuration
-    GEMINI_API_KEY: Optional[str] = None
-    GEMINI_API_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta/openai"
-    GEMINI_MODEL: str = "gemini-2.5-flash-lite"
-
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:

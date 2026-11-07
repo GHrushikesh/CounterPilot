@@ -99,7 +99,7 @@ CounterPilot/
 - Frontend: React 19, TypeScript, Vite, Tailwind CSS v4, Motion (fluid spring physics), Lucide Icons
 - Backend: FastAPI, Python 3.12, SQLAlchemy, Pydantic v2, Uvicorn
 - Database: SQLite with ACID transaction guarantees and Decimal precision
-- AI Engine: BharatCode LLM API (with fallback support for Google Gemini 2.5 Flash Lite)
+- AI Engine: BharatCode LLM API (Qwen 3.8 27B)
 
 ---
 

@@ -154,11 +154,7 @@ export const AssistantPage: React.FC = () => {
             </h1>
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-orange-500/10 text-orange-900 border border-orange-500/20 shadow-2xs">
               <Sparkles className="w-3 h-3 text-orange-600" />
-              {activeModel
-                ? activeModel.includes('gemini')
-                  ? `Google Gemini (${activeModel})`
-                  : `BharatCode (${activeModel})`
-                : 'BharatCode / Gemini'}
+              {activeModel ? `BharatCode (${activeModel})` : 'BharatCode AI'}
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1 font-normal">

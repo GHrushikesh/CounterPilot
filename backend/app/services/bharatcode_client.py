@@ -25,50 +25,30 @@ class BharatCodeClient:
 
     def _resolve_provider_and_key(self) -> tuple[str, str, str, str]:
         """
-        Resolves active AI provider, api_key, endpoint URL, and model.
-        Supports both official BharatCode API and Google Gemini fallback testing.
+        Resolves active BharatCode API key, endpoint URL, and model.
         Returns: (provider_name, api_key, endpoint, model)
         """
-        gemini_key = getattr(settings, "GEMINI_API_KEY", None)
         bharat_key = settings.BHARATCODE_API_KEY
 
-        # Only read disk .env if neither key was explicitly patched / configured in settings
-        if gemini_key is None and bharat_key is None:
+        # Only read disk .env if key was not explicitly configured in settings
+        if bharat_key is None:
             for path in (".env", "backend/.env", "../.env"):
                 if os.path.exists(path):
                     vals = dotenv_values(path)
-                    if not gemini_key:
-                        gemini_key = vals.get("GEMINI_API_KEY")
-                    if not bharat_key:
-                        bharat_key = vals.get("BHARATCODE_API_KEY")
-                    if gemini_key or bharat_key:
+                    bharat_key = vals.get("BHARATCODE_API_KEY")
+                    if bharat_key:
                         break
 
-        # 1. If explicit Gemini API Key is active
-        if gemini_key and gemini_key.strip() and gemini_key.strip() not in (
-            "", "your_gemini_api_key_here", "paste_your_api_key_here"
-        ):
-            base_url = settings.GEMINI_API_BASE_URL.rstrip("/")
-            endpoint = f"{base_url}/chat/completions"
-            return "gemini", gemini_key.strip(), endpoint, settings.GEMINI_MODEL
-
-        # 2. If BharatCode API Key is active
         if bharat_key and bharat_key.strip() and bharat_key.strip() not in (
             "", "your_bharatcode_api_key_here", "paste_your_api_key_here"
         ):
             clean_key = bharat_key.strip()
-            # If user pasted a Google Gemini key into BHARATCODE_API_KEY (AIza... prefix)
-            if clean_key.startswith("AIza"):
-                base_url = settings.GEMINI_API_BASE_URL.rstrip("/")
-                endpoint = f"{base_url}/chat/completions"
-                return "gemini", clean_key, endpoint, settings.GEMINI_MODEL
-
             base_url = settings.BHARATCODE_API_BASE_URL.rstrip("/")
             endpoint = f"{base_url}/chat/completions"
             return "bharatcode", clean_key, endpoint, settings.BHARATCODE_MODEL
 
         raise AssistantConfigurationException(
-            "BharatCode API key is not configured. Please set BHARATCODE_API_KEY or GEMINI_API_KEY in the backend environment."
+            "BharatCode API key is not configured. Please set BHARATCODE_API_KEY in the backend environment."
         )
 
     def _get_api_key(self) -> str:
@@ -82,13 +62,12 @@ class BharatCodeClient:
         max_tokens: int = 1024,
     ) -> str:
         """
-        Sends conversation messages to active Model API (/chat/completions).
-        Supports BharatCode (qwen-3.8-27b) and Google Gemini (gemini-2.5-flash).
+        Sends conversation messages to BharatCode Model API (/chat/completions)
+        using the official qwen-3.8-27b model.
         """
         provider, api_key, endpoint, model = self._resolve_provider_and_key()
         self.active_provider = provider
         self.active_model = model
-        provider_label = "Gemini" if provider == "gemini" else "BharatCode"
 
         headers = {
             "Authorization": f"Bearer {api_key}",
@@ -111,80 +90,53 @@ class BharatCodeClient:
                 with httpx.Client(timeout=timeout) as client:
                     response = client.post(endpoint, json=payload, headers=headers)
 
-            # Resilient fallback if initial Gemini model was deprecated or not found (404)
-            if provider == "gemini" and response.status_code == 404:
-                for fb_model in ("gemini-2.5-flash-lite", "gemini-3.1-flash-lite"):
-                    if fb_model != model:
-                        logger.info(f"Gemini model {model} returned 404. Retrying with {fb_model}...")
-                        payload["model"] = fb_model
-                        if self._http_client:
-                            fallback_res = self._http_client.post(endpoint, json=payload, headers=headers, timeout=timeout)
-                        else:
-                            with httpx.Client(timeout=timeout) as client:
-                                fallback_res = client.post(endpoint, json=payload, headers=headers)
-                        if fallback_res.status_code == 200:
-                            response = fallback_res
-                            self.active_model = fb_model
-                            break
-
             if response.status_code in (401, 403):
-                logger.error(f"{provider_label} auth failed ({response.status_code}): {response.text}")
-                raise AssistantAuthException(f"{provider_label} authentication failed. Please verify your API key.")
+                logger.error(f"BharatCode auth failed ({response.status_code}): {response.text}")
+                raise AssistantAuthException("BharatCode authentication failed. Please verify your API key.")
 
             if response.status_code == 402:
                 try:
                     err_msg = response.json().get("error", {}).get("message")
                 except Exception:
                     err_msg = None
-                display_err = err_msg or f"{provider_label} subscription required."
-                logger.warning(f"{provider_label} subscription required (402): {response.text}")
+                display_err = err_msg or "BharatCode subscription required."
+                logger.warning(f"BharatCode subscription required (402): {response.text}")
                 raise AssistantAuthException(f"Subscription required: {display_err}")
 
             if response.status_code == 429:
-                logger.warning(f"{provider_label} rate limit exceeded.")
-                raise AssistantRateLimitException(f"{provider_label} model rate limit reached. Please wait a moment and retry.")
+                logger.warning(f"BharatCode rate limited: {response.text}")
+                raise AssistantRateLimitException("BharatCode rate limit reached. Please wait a moment before trying again.")
 
             if response.status_code in (502, 503, 504):
-                logger.error(f"{provider_label} service unavailable ({response.status_code}): {response.text}")
-                raise AssistantBusyException(f"{provider_label} AI service is currently busy. Please retry shortly.")
+                if response.status_code == 504:
+                    raise AssistantTimeoutException("BharatCode request timed out. Please try again.")
+                raise AssistantBusyException("BharatCode service is temporarily busy. Please try again in a moment.")
 
             if response.status_code != 200:
-                logger.error(f"{provider_label} returned unexpected status {response.status_code}: {response.text}")
-                raise AssistantMalformedException(f"{provider_label} API returned HTTP status {response.status_code}.")
+                logger.error(f"BharatCode unexpected status {response.status_code}: {response.text}")
+                raise AssistantMalformedException(f"BharatCode returned status code {response.status_code}")
 
             try:
                 data = response.json()
-                choices = data.get("choices")
-                if not choices or not isinstance(choices, list) or len(choices) == 0:
-                    raise ValueError("No choices found in response")
+                choices = data.get("choices", [])
+                if not choices:
+                    raise AssistantMalformedException("BharatCode returned a malformed response: empty choice list")
 
-                choice = choices[0]
-                message = choice.get("message", {})
-                content = message.get("content")
-                if not content or not isinstance(content, str):
-                    raise ValueError("No content string in message choice")
+                message = choices[0].get("message", {})
+                content = message.get("content", "").strip()
+                if not content:
+                    raise AssistantMalformedException("BharatCode returned a malformed response: empty content")
 
-                return content.strip()
+                return content
 
-            except Exception as parse_err:
-                logger.error(f"Failed to parse {provider_label} JSON response: {parse_err}. Response body: {response.text}")
-                raise AssistantMalformedException(f"Received malformed or non-standard response from {provider_label} API.")
+            except (KeyError, ValueError, IndexError) as parse_err:
+                logger.error(f"Failed to parse BharatCode JSON response: {parse_err}")
+                raise AssistantMalformedException("Failed to parse malformed response from BharatCode API")
 
-        except httpx.TimeoutException as timeout_err:
-            logger.error(f"{provider_label} API timeout after {timeout}s: {timeout_err}")
-            raise AssistantTimeoutException(f"{provider_label} AI model request timed out. Please try again.")
+        except httpx.TimeoutException:
+            logger.error("BharatCode request timed out via HTTP client")
+            raise AssistantTimeoutException("BharatCode connection timed out. Please check your network connection.")
 
-        except (
-            AssistantConfigurationException,
-            AssistantAuthException,
-            AssistantRateLimitException,
-            AssistantBusyException,
-            AssistantTimeoutException,
-            AssistantMalformedException,
-        ):
-            raise
-
-        except httpx.RequestError as req_err:
-            logger.error(f"Network error connecting to {provider_label}: {req_err}")
-            raise AssistantBusyException(f"Failed to connect to {provider_label} Model API: {str(req_err)}")
-
+        except httpx.RequestError as net_err:
+            logger.error(f"Network error contacting BharatCode: {net_err}")
+            raise AssistantBusyException(f"Could not connect to BharatCode service: {str(net_err)}")

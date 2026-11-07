@@ -70,7 +70,7 @@ class AssistantService:
         # Append current user prompt
         messages.append({"role": "user", "content": request.message.strip()})
 
-        # 3. Call Model API (BharatCode or Gemini fallback)
+        # 3. Call Model API (BharatCode official Qwen model)
         reply_content = ai_client.generate_chat_completion(messages=messages)
         active_model = getattr(ai_client, "active_model", settings.BHARATCODE_MODEL)
 

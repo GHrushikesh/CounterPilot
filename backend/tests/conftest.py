@@ -31,12 +31,9 @@ def clean_test_api_keys():
     """Ensure tests run in an isolated environment without local .env API keys bleeding in."""
     from app.core.config import settings
     orig_bharat = settings.BHARATCODE_API_KEY
-    orig_gemini = settings.GEMINI_API_KEY
     settings.BHARATCODE_API_KEY = None
-    settings.GEMINI_API_KEY = None
     yield
     settings.BHARATCODE_API_KEY = orig_bharat
-    settings.GEMINI_API_KEY = orig_gemini
 
 
 @pytest.fixture(autouse=True)

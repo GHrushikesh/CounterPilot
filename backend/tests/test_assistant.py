@@ -693,63 +693,6 @@ def test_ist_monthly_calendar_boundaries(db_session, seeded_db):
     assert context["current_month_sales_ist"]["total_revenue"] == 28.0
 
 
-def test_gemini_testing_fallback_routing(client, seeded_db):
-    """Test that when GEMINI_API_KEY is configured, requests route to Google Gemini."""
-    expected_reply = "Hello from Google Gemini! You have 10 products."
-    captured_request = {}
 
-    def mock_gemini_handler(request: httpx.Request):
-        captured_request["url"] = str(request.url)
-        captured_request["headers"] = dict(request.headers)
-        body = json.loads(request.content)
-        captured_request["model"] = body["model"]
-        return make_mock_bharatcode_response(expected_reply)
-
-    mock_client = httpx.Client(transport=httpx.MockTransport(mock_gemini_handler))
-    ai_client = BharatCodeClient(http_client=mock_client)
-
-    from app.main import app
-    app.dependency_overrides[get_ai_client] = lambda: ai_client
-
-    try:
-        with patch.object(settings, "GEMINI_API_KEY", "test_gemini_api_key_123"):
-            res = client.post("/api/assistant/chat", json={"message": "Hello Gemini!"})
-            assert res.status_code == 200
-            data = res.json()
-            assert data["reply"] == expected_reply
-            assert data["model"] == "gemini-2.5-flash-lite"
-            assert "generativelanguage.googleapis.com" in captured_request["url"]
-            assert "Bearer test_gemini_api_key_123" in captured_request["headers"]["authorization"]
-    finally:
-        app.dependency_overrides.pop(get_ai_client, None)
-
-
-def test_gemini_signature_auto_detection_in_bharatcode_key(client, seeded_db):
-    """Test that pasting a Google Gemini key (starting with AIza) into BHARATCODE_API_KEY auto-routes to Gemini."""
-    expected_reply = "Auto-detected Gemini key!"
-    captured_request = {}
-
-    def mock_gemini_handler(request: httpx.Request):
-        captured_request["url"] = str(request.url)
-        body = json.loads(request.content)
-        captured_request["model"] = body["model"]
-        return make_mock_bharatcode_response(expected_reply)
-
-    mock_client = httpx.Client(transport=httpx.MockTransport(mock_gemini_handler))
-    ai_client = BharatCodeClient(http_client=mock_client)
-
-    from app.main import app
-    app.dependency_overrides[get_ai_client] = lambda: ai_client
-
-    try:
-        with patch.object(settings, "GEMINI_API_KEY", None), patch.object(settings, "BHARATCODE_API_KEY", "AIzaSyTestGoogleKey987"):
-            res = client.post("/api/assistant/chat", json={"message": "Test auto detect"})
-            assert res.status_code == 200
-            data = res.json()
-            assert data["reply"] == expected_reply
-            assert data["model"] == "gemini-2.5-flash-lite"
-            assert "generativelanguage.googleapis.com" in captured_request["url"]
-    finally:
-        app.dependency_overrides.pop(get_ai_client, None)
 
 
