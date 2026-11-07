@@ -7,6 +7,12 @@ import type {
   Sale,
   SaleCreatePayload,
   TransactionItem,
+  AssistantChatRequest,
+  AssistantChatResponse,
+  ProductCreatePayload,
+  ProductUpdatePayload,
+  ProductRestockPayload,
+  StoreSetting,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -99,5 +105,50 @@ export const apiService = {
 
   getTransactions: async (page = 1, pageSize = 20): Promise<PaginatedResponse<TransactionItem>> => {
     return request<PaginatedResponse<TransactionItem>>(`transactions?page=${page}&page_size=${pageSize}`);
+  },
+
+  sendAssistantMessage: async (payload: AssistantChatRequest): Promise<AssistantChatResponse> => {
+    return request<AssistantChatResponse>('assistant/chat', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  createProduct: async (payload: ProductCreatePayload): Promise<Product> => {
+    return request<Product>('products', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  updateProduct: async (id: number, payload: ProductUpdatePayload): Promise<Product> => {
+    return request<Product>(`products/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  restockProduct: async (id: number, payload: ProductRestockPayload): Promise<Product> => {
+    return request<Product>(`products/${id}/restock`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  deleteProduct: async (id: number): Promise<{ success: boolean; message: string }> => {
+    return request<{ success: boolean; message: string }>(`products/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  getStoreSettings: async (): Promise<StoreSetting> => {
+    return request<StoreSetting>('settings');
+  },
+
+  updateStoreSettings: async (payload: Partial<StoreSetting>): Promise<StoreSetting> => {
+    return request<StoreSetting>('settings', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
   },
 };

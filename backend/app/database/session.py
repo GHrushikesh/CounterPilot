@@ -54,3 +54,9 @@ def init_db() -> None:
             conn.exec_driver_sql("ALTER TABLE sales ADD COLUMN idempotency_key VARCHAR(100)")
             conn.commit()
 
+        cursor = conn.exec_driver_sql("PRAGMA table_info(sale_items)")
+        sale_item_cols = [r[1] for r in cursor.fetchall()]
+        if sale_item_cols and "purchase_price_snapshot" not in sale_item_cols:
+            conn.exec_driver_sql("ALTER TABLE sale_items ADD COLUMN purchase_price_snapshot NUMERIC(10, 2)")
+            conn.commit()
+

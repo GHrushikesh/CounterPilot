@@ -16,8 +16,10 @@ import type { Product, InventorySummary, Sale } from '../types';
 import { ProductTable } from '../components/inventory/ProductTable';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { EmptyState } from '../components/common/EmptyState';
+import { useStore } from '../context/StoreContext';
 
 export const DashboardPage: React.FC = () => {
+  const { shopName } = useStore();
   const [summary, setSummary] = useState<InventorySummary | null>(null);
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
@@ -62,19 +64,19 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Welcome Heading */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-3 border-b border-slate-200/60">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-            Welcome back, Ujjam Computers
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 display-heading">
+            Welcome back, {shopName}
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 mt-1 font-normal">
             Real-time retail inventory overview, counter billing, and system status.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             to="/sales"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold apple-glass-button-primary active:scale-95 rounded-xl transition-all cursor-pointer"
           >
             <ShoppingCart className="w-3.5 h-3.5" />
             <span>New Counter Bill</span>
@@ -82,9 +84,9 @@ export const DashboardPage: React.FC = () => {
           <button
             onClick={loadDashboardData}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-md transition-colors shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 apple-glass-button rounded-xl active:scale-95 transition-all shadow-2xs cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-emerald-600' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-orange-600' : ''}`} />
             <span>Refresh</span>
           </button>
         </div>
@@ -92,11 +94,11 @@ export const DashboardPage: React.FC = () => {
 
       {/* Error Banner if API unreachable */}
       {error && (
-        <div className="p-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
+        <div className="p-3.5 rounded-xl bg-rose-50/80 border border-rose-200 text-rose-800 text-xs flex items-center justify-between shadow-2xs">
           <span>{error}</span>
           <button
             onClick={loadDashboardData}
-            className="underline font-medium hover:text-rose-950"
+            className="underline font-medium hover:text-rose-950 active:scale-95"
           >
             Retry
           </button>
@@ -104,34 +106,34 @@ export const DashboardPage: React.FC = () => {
       )}
 
       {/* Prominent AI Assistant Entry Point */}
-      <div className="rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50/80 via-white to-slate-50 p-5 shadow-xs">
+      <div className="apple-card animate-apple-spring bg-gradient-to-r from-orange-50/70 via-white to-slate-50/50 p-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-lg bg-emerald-600 flex items-center justify-center text-white shrink-0 shadow-2xs">
+            <div className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center text-white shrink-0 shadow-xs">
               <Bot className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-slate-900">
+                <h3 className="text-sm font-semibold text-slate-900 tracking-tight">
                   CounterPilot AI Assistant
                 </h3>
-                <span className="text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                  Ready for Assistant Module
+                <span className="text-[10px] font-semibold tracking-wide uppercase px-2.5 py-0.5 rounded-full bg-orange-500/10 text-orange-900 border border-orange-500/20">
+                  Ready for Queries
                 </span>
               </div>
               <p className="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
                 Run your shop through natural conversation. Query live stock:{' '}
                 <span className="italic text-slate-800">"Which items are below minimum stock?"</span>,{' '}
                 <span className="italic text-slate-800">"What did we bill most today?"</span>, or{' '}
-                <span className="italic text-slate-800">"Record counter cash sale of 2 Maggi packets"</span>.
+                <span className="italic text-slate-800">"What were our sales yesterday?"</span>.
               </p>
             </div>
           </div>
           <Link
             to="/assistant"
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 rounded-md transition-colors shrink-0 self-start md:self-center"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold apple-glass-button text-orange-950 active:scale-95 rounded-xl transition-all shrink-0 self-start md:self-center cursor-pointer"
           >
-            <span>Preview Assistant</span>
+            <span>Open Assistant</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -140,24 +142,24 @@ export const DashboardPage: React.FC = () => {
       {/* Foundational Metrics Grid (Real Data from SQLite) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Total Products */}
-        <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs">
+        <div className="apple-card p-4 animate-apple-spring [animation-delay:60ms]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500">Total Products</span>
-            <div className="p-2 rounded bg-slate-100 text-slate-600">
+            <div className="p-2 rounded-lg bg-slate-100/80 text-slate-600">
               <Package className="w-4 h-4 text-slate-600" />
             </div>
           </div>
-          <div className="text-2xl font-bold tracking-tight text-slate-900 mt-2">
+          <div className="text-2xl font-bold tracking-tight text-slate-900 mt-2 tabular-nums">
             {loading ? '—' : summary?.total_products ?? 0}
           </div>
           <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+            <CheckCircle2 className="w-3 h-3 text-orange-600" />
             <span>Active in catalog database</span>
           </div>
         </div>
 
         {/* Low Stock Alerts */}
-        <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs">
+        <div className="apple-card p-4 animate-apple-spring [animation-delay:120ms]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500">Low Stock Warnings</span>
             <div className="p-2 rounded bg-amber-50 text-amber-700">
@@ -173,7 +175,7 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {/* Active Categories */}
-        <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs">
+        <div className="apple-card p-4 animate-apple-spring [animation-delay:180ms]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500">Active Categories</span>
             <div className="p-2 rounded bg-slate-100 text-slate-600">
@@ -347,29 +349,43 @@ export const DashboardPage: React.FC = () => {
             )}
           </div>
 
-          {/* Architecture Status Card */}
-          <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
-            <h3 className="text-xs font-semibold text-slate-800 mb-2">
-              CounterPilot Operating Engine
+          {/* Store Quick Actions */}
+          <div className="apple-card p-5 shadow-2xs space-y-3">
+            <h3 className="text-xs font-semibold text-slate-800 tracking-tight">
+              Store Quick Actions
             </h3>
-            <ul className="space-y-1.5 text-[11px] text-slate-600">
-              <li className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Instant counter checkout with stock deduction</span>
-              </li>
-              <li className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Cash, UPI, Card, and Khata payments</span>
-              </li>
-              <li className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Thermal receipt printing (58mm / 80mm)</span>
-              </li>
-              <li className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Atomic stock rollback on insufficient inventory</span>
-              </li>
-            </ul>
+            <div className="grid grid-cols-1 gap-2 text-xs">
+              <Link
+                to="/sales"
+                className="flex items-center justify-between p-2.5 rounded-xl bg-orange-50/70 hover:bg-orange-50 border border-orange-200/60 text-orange-950 font-medium transition-all group active:scale-98"
+              >
+                <div className="flex items-center gap-2">
+                  <ShoppingCart className="w-3.5 h-3.5 text-orange-600" />
+                  <span>Start Counter POS Bill</span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-orange-500 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+              <Link
+                to="/inventory"
+                className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200/60 text-slate-800 font-medium transition-all group active:scale-98"
+              >
+                <div className="flex items-center gap-2">
+                  <Package className="w-3.5 h-3.5 text-slate-600" />
+                  <span>Manage Inventory & Restock</span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+              <Link
+                to="/assistant"
+                className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200/60 text-slate-800 font-medium transition-all group active:scale-98"
+              >
+                <div className="flex items-center gap-2">
+                  <Bot className="w-3.5 h-3.5 text-slate-600" />
+                  <span>Ask AI Store Assistant</span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
           </div>
         </div>
       </div>

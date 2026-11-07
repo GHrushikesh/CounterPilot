@@ -1,0 +1,69 @@
+Project Name: CounterPilot
+Repository: https://github.com/GHrushikesh/CounterPilot.git
+Developer: Hrushikesh (GHrushikesh)
+Track: BharatCode Hackathon - Retail AI & Counter Intelligence
+
+================================================================================
+PROJECT OVERVIEW
+================================================================================
+CounterPilot is a production-grade retail operating counter and AI store assistant
+engineered specifically for Indian neighborhood retail and kirana stores.
+
+It bridges fast point-of-sale counter operations with an AI store copilot powered by
+the BharatCode API. Unlike generic chatbots, CounterPilot grounds every AI response
+in real-time SQLite database transactions—delivering accurate metrics on revenue,
+low-stock items, top-selling inventory, and daily margin performance.
+
+================================================================================
+KEY FEATURES & CAPABILITIES
+================================================================================
+1. High-Speed Counter Point of Sale (POS)
+   - Sub-100ms item lookup by name, SKU, or category.
+   - Real-time stock availability check preventing accidental overselling.
+   - Multiple Indian payment modes: Cash, UPI (instant QR ready), Card, and Udhaar/Khata.
+   - Printable thermal bills (58mm and 80mm roll format) formatted for retail receipt printers.
+
+2. Full Catalog & Stock Management
+   - Add new retail products with custom pricing (cost & retail), initial stock, and units.
+   - Instant restock flow for low-stock and out-of-stock items (+quantity).
+   - Edit product prices, minimum stock alert thresholds, and categories.
+   - Soft-deactivation to preserve historical accounting and audit compliance.
+
+3. Strict Financial Precision & Immutable Audit Ledger
+   - Decimal(10,2) arithmetic across all calculations to eliminate floating-point rounding errors.
+   - Immutable double-entry transaction ledger tracking all sales, restocks, and adjustments.
+   - Atomic SQL transactions with automatic rollback on insufficient stock.
+
+4. BharatCode Conversational Store Copilot
+   - Natural language interface for shopkeepers to ask questions about store performance.
+   - Live database grounding: Fetches verified inventory records and sales figures before LLM inference.
+   - Answers questions like "Which items are low on stock?", "What were today's total sales?", and "What are my top-selling items?".
+   - Context-aware: Automatically customized with the shopkeeper's store profile and name.
+
+5. Premium Apple WWDC Glass UI
+   - White + warm orange accents designed for visual clarity in bright retail shop environments.
+   - Fluid spring physics using motion/react with zero layout shifts.
+   - 100% persistent: Store profile, inventory edits, sales records, and bills survive page reloads.
+
+================================================================================
+TECH STACK
+================================================================================
+- Frontend: React 19, TypeScript, Tailwind CSS v4, Motion, Lucide Icons, Vite
+- Backend: FastAPI, Python 3.12, SQLAlchemy, Pydantic v2, Uvicorn
+- Database: SQLite (ACID compliant single-file persistence)
+- AI Engine: BharatCode API (with automatic fallback to Gemini 2.5 Flash Lite)
+
+================================================================================
+RUNNING THE APPLICATION
+================================================================================
+Backend:
+  cd backend
+  python -m venv .venv
+  .venv\Scripts\activate  (or source .venv/bin/activate on Linux/macOS)
+  pip install -r requirements.txt
+  uvicorn app.main:app --port 8000
+
+Frontend:
+  cd frontend
+  npm install
+  npm run dev

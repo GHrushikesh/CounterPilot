@@ -53,7 +53,7 @@ export const TransactionsPage: React.FC = () => {
         );
       case 'INITIAL_STOCK':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-orange-50 text-orange-800 border border-orange-200/80">
             <Layers className="w-3 h-3" />
             <span>INITIAL STOCK</span>
           </span>
@@ -107,9 +107,9 @@ export const TransactionsPage: React.FC = () => {
           <button
             onClick={fetchTransactions}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-md shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 apple-glass-button rounded-xl shadow-2xs active:scale-95 transition-all cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-emerald-600' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-orange-600' : ''}`} />
             <span>Refresh</span>
           </button>
         </div>

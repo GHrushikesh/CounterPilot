@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Receipt,
   Search,
@@ -203,38 +204,39 @@ export const SalesPage: React.FC = () => {
   return (
     <div className="space-y-5">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-3 border-b border-slate-200/60">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 display-heading">
             Counter Sales & Billing
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 mt-1 font-normal">
             Instant counter billing, stock deduction, and thermal invoice generation.
           </p>
         </div>
 
-        {/* Tab switch */}
-        <div className="flex items-center gap-1 bg-slate-200/60 p-1 rounded-lg self-start sm:self-auto">
-          <button
-            onClick={() => setActiveTab('billing')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-              activeTab === 'billing'
-                ? 'bg-white text-emerald-800 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Counter POS
-          </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-              activeTab === 'history'
-                ? 'bg-white text-emerald-800 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Past Bills
-          </button>
+        {/* Tab switch with Apple Fluid Spring Pill */}
+        <div className="relative flex items-center gap-1 apple-glass-container p-1 rounded-2xl self-start sm:self-auto">
+          {(['billing', 'history'] as const).map((tab) => {
+            const isActive = activeTab === tab;
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`relative px-4 py-1.5 text-xs font-semibold rounded-xl transition-colors z-10 cursor-pointer ${
+                  isActive ? 'text-orange-950 font-bold' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTabPill"
+                    className="absolute inset-0 apple-glass-button rounded-xl -z-10 shadow-2xs"
+                    transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+                  />
+                )}
+                <span>{tab === 'billing' ? 'Counter POS' : 'Past Bills'}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -244,7 +246,7 @@ export const SalesPage: React.FC = () => {
           {/* Left Column: Product Catalog & Quick Add (7 Cols) */}
           <div className="lg:col-span-7 space-y-4">
             {/* Filter Bar */}
-            <div className="bg-white p-3.5 rounded-lg border border-slate-200 shadow-2xs flex flex-col sm:flex-row gap-3">
+            <div className="apple-glass-container p-3.5 rounded-2xl flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -252,14 +254,14 @@ export const SalesPage: React.FC = () => {
                   placeholder="Quick search product or SKU..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-slate-50/50"
+                  className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 bg-white/70"
                 />
               </div>
 
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="text-xs border border-slate-300 rounded-md px-2.5 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="text-xs border border-slate-200/80 rounded-xl px-3 py-1.5 bg-white/80 text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400"
               >
                 <option value="">All Categories</option>
                 {categories.map((c) => (
@@ -288,12 +290,12 @@ export const SalesPage: React.FC = () => {
                       className={`p-3.5 rounded-lg border transition-all text-left flex flex-col justify-between ${
                         outOfStock
                           ? 'bg-slate-100 border-slate-200 opacity-60 cursor-not-allowed'
-                          : 'bg-white border-slate-200 hover:border-emerald-500 hover:shadow-2xs cursor-pointer group'
+                          : 'bg-white border-slate-200 hover:border-orange-500 hover:shadow-2xs cursor-pointer group'
                       }`}
                     >
                       <div>
                         <div className="flex items-start justify-between gap-2">
-                          <h4 className="text-xs font-semibold text-slate-900 group-hover:text-emerald-700 transition-colors line-clamp-1">
+                          <h4 className="text-xs font-semibold text-slate-900 group-hover:text-orange-600 transition-colors line-clamp-1">
                             {p.name}
                           </h4>
                         </div>
@@ -337,7 +339,7 @@ export const SalesPage: React.FC = () => {
           <div className="lg:col-span-5 bg-white rounded-lg border border-slate-200 shadow-2xs p-5 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2">
-                <Receipt className="w-4 h-4 text-emerald-700" />
+                <Receipt className="w-4 h-4 text-orange-600" />
                 <h3 className="text-sm font-bold text-slate-900">Current Bill</h3>
               </div>
               {cart.length > 0 && (
@@ -369,64 +371,70 @@ export const SalesPage: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
-                {cart.map((item) => {
-                  const maxStock = parseFloat(String(item.product.current_stock));
-                  const isExceeded = item.quantity > maxStock;
-                  const itemPrice = typeof item.product.selling_price === 'number'
-                    ? item.product.selling_price
-                    : parseFloat(item.product.selling_price);
+              <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+                <AnimatePresence initial={false}>
+                  {cart.map((item) => {
+                    const maxStock = parseFloat(String(item.product.current_stock));
+                    const isExceeded = item.quantity > maxStock;
+                    const itemPrice = typeof item.product.selling_price === 'number'
+                      ? item.product.selling_price
+                      : parseFloat(item.product.selling_price);
 
-                  return (
-                    <div
-                      key={item.product.id}
-                      className={`p-2.5 rounded-md border flex items-center justify-between gap-2 ${
-                        isExceeded ? 'bg-rose-50/50 border-rose-300' : 'bg-slate-50/60 border-slate-200'
-                      }`}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-semibold text-slate-900 truncate">
-                          {item.product.name}
-                        </div>
-                        <div className="text-[10px] text-slate-500">
-                          {formatCurrency(itemPrice)} × {item.quantity} ={' '}
-                          <span className="font-mono font-medium text-slate-800">
-                            {formatCurrency(itemPrice * item.quantity)}
-                          </span>
-                        </div>
-                        {isExceeded && (
-                          <div className="text-[10px] text-rose-600 font-medium">
-                            Max stock available: {maxStock}
+                    return (
+                      <motion.div
+                        key={item.product.id}
+                        initial={{ opacity: 0, scale: 0.94, y: 8 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.92, y: -8 }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                        className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 transition-colors ${
+                          isExceeded ? 'bg-rose-50/50 border-rose-300' : 'bg-slate-50/70 border-slate-200/80 shadow-2xs'
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-semibold text-slate-900 truncate">
+                            {item.product.name}
                           </div>
-                        )}
-                      </div>
+                          <div className="text-[10px] text-slate-500">
+                            {formatCurrency(itemPrice)} × {item.quantity} ={' '}
+                            <span className="font-mono font-medium text-slate-800">
+                              {formatCurrency(itemPrice * item.quantity)}
+                            </span>
+                          </div>
+                          {isExceeded && (
+                            <div className="text-[10px] text-rose-600 font-medium">
+                              Max stock available: {maxStock}
+                            </div>
+                          )}
+                        </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          onClick={() => updateQuantity(item.product.id, -1)}
-                          className="w-6 h-6 rounded bg-white border border-slate-300 flex items-center justify-center text-slate-700 hover:bg-slate-100"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="w-7 text-center font-mono text-xs font-bold text-slate-900">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateQuantity(item.product.id, 1)}
-                          className="w-6 h-6 rounded bg-white border border-slate-300 flex items-center justify-center text-slate-700 hover:bg-slate-100"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => removeFromCart(item.product.id)}
-                          className="p-1 rounded text-slate-400 hover:text-rose-600 ml-1"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            onClick={() => updateQuantity(item.product.id, -1)}
+                            className="w-6 h-6 rounded-lg bg-white border border-slate-300/80 flex items-center justify-center text-slate-700 hover:bg-slate-100 active:scale-90 transition-all cursor-pointer shadow-2xs"
+                          >
+                            <Minus className="w-3 h-3" />
+                          </button>
+                          <span className="w-7 text-center font-mono text-xs font-bold text-slate-900 tabular-nums">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQuantity(item.product.id, 1)}
+                            className="w-6 h-6 rounded-lg bg-white border border-slate-300/80 flex items-center justify-center text-slate-700 hover:bg-slate-100 active:scale-90 transition-all cursor-pointer shadow-2xs"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => removeFromCart(item.product.id)}
+                            className="p-1 rounded-lg text-slate-400 hover:text-rose-600 active:scale-90 transition-all ml-1 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
               </div>
             )}
 
@@ -440,14 +448,14 @@ export const SalesPage: React.FC = () => {
                     placeholder="Customer Name (optional)"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    className="px-2.5 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                    className="px-2.5 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-orange-500 focus:outline-none"
                   />
                   <input
                     type="text"
                     placeholder="Phone (optional)"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="px-2.5 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                    className="px-2.5 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-orange-500 focus:outline-none"
                   />
                 </div>
 
@@ -470,9 +478,9 @@ export const SalesPage: React.FC = () => {
                           key={mode.key}
                           type="button"
                           onClick={() => setPaymentMethod(mode.key as any)}
-                          className={`flex flex-col items-center justify-center py-2 px-1 rounded border text-xs font-medium transition-all ${
+                          className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg border text-xs font-medium transition-all active:scale-95 ${
                             selected
-                              ? 'bg-emerald-50 border-emerald-500 text-emerald-800 font-bold'
+                              ? 'bg-orange-50 border-orange-500 text-orange-950 font-bold shadow-2xs'
                               : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                           }`}
                         >
@@ -499,12 +507,12 @@ export const SalesPage: React.FC = () => {
                       min="0"
                       value={discount}
                       onChange={(e) => setDiscount(e.target.value)}
-                      className="w-20 px-2 py-0.5 text-right font-mono text-xs border border-slate-300 rounded focus:ring-1 focus:ring-emerald-500"
+                      className="w-20 px-2 py-0.5 text-right font-mono text-xs border border-slate-300 rounded focus:ring-1 focus:ring-orange-500"
                     />
                   </div>
                   <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-slate-200">
                     <span>Total Amount:</span>
-                    <span className="text-emerald-700 font-mono">
+                    <span className="text-orange-700 font-mono">
                       {formatCurrency(totalPayable)}
                     </span>
                   </div>
@@ -514,7 +522,7 @@ export const SalesPage: React.FC = () => {
                 <button
                   onClick={handleCheckout}
                   disabled={submitting || !!stockExceededItem}
-                  className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-md text-xs font-semibold shadow-xs flex items-center justify-center gap-2 transition-colors"
+                  className="w-full py-2.5 px-4 apple-glass-button-primary active:scale-95 disabled:opacity-50 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>{submitting ? 'Generating Bill...' : `Complete Sale (${formatCurrency(totalPayable)})`}</span>
@@ -533,7 +541,7 @@ export const SalesPage: React.FC = () => {
             </div>
             <button
               onClick={fetchHistory}
-              className="text-xs text-emerald-700 font-medium hover:underline"
+              className="text-xs text-orange-600 font-semibold hover:text-orange-700 hover:underline"
             >
               Refresh
             </button>
@@ -573,7 +581,7 @@ export const SalesPage: React.FC = () => {
                         {s.customer_name || 'Walk-in'}
                       </td>
                       <td className="py-2.5 px-3">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-orange-50 text-orange-900 border border-orange-200/80">
                           {s.payment_method}
                         </span>
                       </td>
@@ -586,7 +594,7 @@ export const SalesPage: React.FC = () => {
                       <td className="py-2.5 px-3 text-center">
                         <button
                           onClick={() => setCompletedSale(s)}
-                          className="inline-flex items-center gap-1 text-[11px] text-emerald-700 hover:text-emerald-900 font-medium"
+                          className="inline-flex items-center gap-1 text-[11px] text-orange-600 hover:text-orange-800 font-semibold active:scale-95 transition-all"
                         >
                           <Printer className="w-3 h-3" />
                           <span>View</span>

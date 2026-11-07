@@ -413,4 +413,94 @@ def test_invoice_number_uniqueness_and_progression(client, seeded_db):
         assert len(inv.split("-")[-1]) == 4
 
 
+def test_update_product(client, seeded_db):
+    """Verify updating product details via PUT /api/products/{id}."""
+    product = seeded_db.query(Product).first()
+    update_payload = {
+        "name": "Updated Amul Butter 100g",
+        "selling_price": 58.00,
+        "minimum_stock": 15.00,
+    }
+    res = client.put(f"/api/products/{product.id}", json=update_payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["name"] == "Updated Amul Butter 100g"
+    assert float(data["selling_price"]) == 58.00
+    assert float(data["minimum_stock"]) == 15.00
+
+
+def test_restock_product_and_audit_transaction(client, seeded_db):
+    """Verify refilling stock via POST /api/products/{id}/restock adds quantity and logs transaction."""
+    product = seeded_db.query(Product).filter(Product.current_stock == Decimal("0.00")).first()
+    if not product:
+        product = seeded_db.query(Product).first()
+    prev_stock = product.current_stock
+
+    res = client.post(
+        f"/api/products/{product.id}/restock",
+        json={"quantity": 25.0, "note": "Weekly replenishment shipment"},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert float(data["current_stock"]) == float(prev_stock) + 25.0
+
+    # Verify audit transaction
+    tx = (
+        seeded_db.query(InventoryTransaction)
+        .filter(InventoryTransaction.product_id == product.id, InventoryTransaction.transaction_type == "RESTOCK")
+        .order_by(InventoryTransaction.id.desc())
+        .first()
+    )
+    assert tx is not None
+    assert tx.quantity == Decimal("25.00")
+    assert tx.new_stock == prev_stock + Decimal("25.00")
+    assert "Weekly replenishment" in tx.note
+
+
+def test_delete_product_soft_deactivation(client, seeded_db):
+    """Verify deleting product deactivates it and removes it from regular list."""
+    product = seeded_db.query(Product).first()
+    pid = product.id
+
+    del_res = client.delete(f"/api/products/{pid}")
+    assert del_res.status_code == 200
+    assert del_res.json()["success"] is True
+
+    # Product should now be marked inactive
+    seeded_db.refresh(product)
+    assert product.is_active is False
+
+    # List endpoint should exclude inactive products
+    list_res = client.get("/api/products")
+    active_ids = [p["id"] for p in list_res.json()["items"]]
+    assert pid not in active_ids
+
+
+def test_store_settings_persistence(client, seeded_db):
+    """Verify GET and PUT /api/settings persists custom shop name and details."""
+    get_res = client.get("/api/settings")
+    assert get_res.status_code == 200
+    initial_data = get_res.json()
+    assert "shop_name" in initial_data
+
+    update_payload = {
+        "shop_name": "Shree Ganesh Kirana & General Store",
+        "tagline": "Fresh Daily Provisions",
+        "phone": "+91 98765 43210",
+        "gstin": "27AAAAA0000A1Z5",
+    }
+    put_res = client.put("/api/settings", json=update_payload)
+    assert put_res.status_code == 200
+    updated_data = put_res.json()
+    assert updated_data["shop_name"] == "Shree Ganesh Kirana & General Store"
+    assert updated_data["tagline"] == "Fresh Daily Provisions"
+    assert updated_data["phone"] == "+91 98765 43210"
+
+    # Verify subsequent GET returns the persisted shop name
+    get_res2 = client.get("/api/settings")
+    assert get_res2.status_code == 200
+    assert get_res2.json()["shop_name"] == "Shree Ganesh Kirana & General Store"
+
+
+
 

@@ -24,6 +24,7 @@ class SaleItemResponse(BaseModel):
     product_id: int
     product_name: str
     unit_price: Decimal
+    purchase_price_snapshot: Optional[Decimal] = None
     quantity: Decimal
     total_price: Decimal
 

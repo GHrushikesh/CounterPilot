@@ -1,193 +1,219 @@
-# CounterPilot — Retail Operating System
+# CounterPilot: Retail Operating Counter and Conversational AI Copilot
 
-> **Tagline:** *Run your shop through conversation, not complicated software.*
+CounterPilot is a production-grade retail operating counter and AI store assistant built for Indian neighborhood retail and kirana stores. It unites real-time counter billing, stock control, and thermal receipt printing with an AI store assistant powered by the BharatCode API.
 
-CounterPilot is an AI-powered business operating assistant designed for small Indian retail shops (kirana stores, stationery, electronics, and general retail). 
-
-This repository contains the implementation of **Phase 1: Project Foundation**, which establishes the core technical architecture, database foundation, REST API, and modern responsive dashboard shell.
+Every response provided by the assistant is grounded directly in live SQLite database records, eliminating hallucinations and delivering reliable numbers for revenue, margins, and inventory replenishment.
 
 ---
 
-## 1. Architecture Overview
+## Output Previews
 
-CounterPilot is engineered with a clean, decoupled architecture:
+### 1. Store Overview & Operations Dashboard
+![CounterPilot Dashboard](docs/screenshots/dashboard.png)
+
+### 2. High-Speed Counter Point of Sale (POS)
+![Counter POS Billing](docs/screenshots/sales.png)
+
+### 3. Inventory Management, Restock & Catalog Control
+![Catalog and Stock Management](docs/screenshots/inventory.png)
+
+### 4. BharatCode Conversational Store Copilot
+![Conversational Store Assistant](docs/screenshots/assistant.png)
+
+### 5. Store Identity and Receipt Profile Settings
+![Store Settings and Persistence](docs/screenshots/settings.png)
+
+---
+
+## Core Capabilities
+
+### 1. High-Speed Counter Checkout
+- Sub-100 millisecond item search and cart addition by name, SKU, or category.
+- Real-time stock verification preventing accidental overselling of items.
+- Support for Indian retail payment modes: Cash, UPI, Card, and Credit / Khata.
+- Printable thermal receipt output (formatted for standard 58mm and 80mm roll printers).
+- Idempotency key protection preventing duplicate billing during network retries.
+
+### 2. Live Inventory and Catalog Management
+- Add new products with cost price, selling price, initial stock, unit, and low-stock alert thresholds.
+- Direct stock replenishment (restock flow) that increases inventory and logs an immutable audit entry.
+- In-place editing of pricing, names, thresholds, and categories.
+- Soft-deactivation of products preserving historical bills and financial audit ledgers.
+
+### 3. Strict Decimal Precision and Double-Entry Auditing
+- All financial figures, quantities, and totals use Decimal(10,2) precision to eliminate floating-point calculation errors.
+- Every inventory modification is logged as an immutable transaction (SALE, RESTOCK, ADJUSTMENT, INITIAL_STOCK).
+- Atomic database transactions ensure automatic rollback if stock is insufficient.
+
+### 4. BharatCode AI Copilot with Real-Time Grounding
+- Natural language chat interface for shopkeepers to ask about store operations.
+- Direct query grounding: The backend runs SQL aggregations to assemble accurate context before calling the LLM.
+- Capable of answering questions regarding low stock items, today's revenue, yesterday's sales comparisons, top sellers, and unsold stock.
+- Context-aware personalization using the shopkeeper's configured business profile.
+
+### 5. Persistent System State
+- Store configuration, products, inventory movements, and sales records are stored in SQLite.
+- Page reloads preserve all changes immediately without data loss.
+
+---
+
+## System Architecture
 
 ```
 CounterPilot/
-├── frontend/               # React + TypeScript + Vite + Tailwind CSS + React Router
+├── frontend/                     # React 19 + TypeScript + Vite + Tailwind CSS v4
 │   ├── src/
-│   │   ├── components/     # Reusable UI badges, tables, spinners, empty states
-│   │   ├── layouts/        # AppLayout, Sidebar navigation, TopNavbar with shop workspace
-│   │   ├── pages/          # Dashboard, Inventory, Sales, Transactions, Assistant, Settings
-│   │   ├── services/       # Typed API client layer for backend communication
-│   │   ├── types/          # Shared TypeScript domain interfaces
-│   │   ├── App.tsx         # Route configuration
-│   │   └── main.tsx        # React entrypoint
-│   ├── public/
-│   ├── package.json
+│   │   ├── components/           # Modular UI (tables, badges, modals, POS components)
+│   │   │   ├── inventory/        # AddProductModal, EditProductModal, RestockModal, ProductTable
+│   │   │   ├── sales/            # POSCart, ProductSearch, ReceiptModal
+│   │   │   └── common/           # StatusIndicator, LoadingSpinner, EmptyState
+│   │   ├── context/              # StoreContext (synchronized store profile)
+│   │   ├── layouts/              # AppLayout, TopNavbar, Sidebar
+│   │   ├── pages/                # DashboardPage, SalesPage, InventoryPage, TransactionsPage, AssistantPage, SettingsPage
+│   │   ├── services/             # Typed API service client
+│   │   └── types/                # Domain type interfaces
+│   ├── public/                   # Static assets
 │   └── vite.config.ts
 │
-├── backend/                # Python + FastAPI + SQLAlchemy + Pydantic
+├── backend/                      # Python 3.12 + FastAPI + SQLAlchemy + Pydantic v2
 │   ├── app/
-│   │   ├── api/            # API router & modular routes (/health, /products)
-│   │   ├── core/           # Configuration (pydantic-settings) & error handling
-│   │   ├── database/       # Engine, session dependency, and idempotent seed script
-│   │   ├── models/         # SQLAlchemy models (Product, InventoryTransaction)
-│   │   ├── schemas/        # Pydantic request/response validation schemas
-│   │   ├── services/       # Business logic layer (ProductService)
-│   │   └── main.py         # FastAPI application entrypoint with lifespan events
-│   ├── tests/              # Pytest test suite with isolated SQLite fixtures
-│   ├── requirements.txt    # Python dependencies
-│   ├── pytest.ini          # Pytest configuration
-│   └── .env.example        # Backend environment template
+│   │   ├── api/                  # REST endpoints (/health, /products, /sales, /transactions, /settings, /assistant)
+│   │   ├── core/                 # App configuration and exception handlers
+│   │   ├── database/             # SQLAlchemy engine, session provider, and seed script
+│   │   ├── models/               # ORM models (Product, Sale, SaleItem, InventoryTransaction, StoreSetting)
+│   │   ├── schemas/              # Pydantic request and response schemas
+│   │   ├── services/             # Business logic and BharatCode client integration
+│   │   └── main.py               # FastAPI application entrypoint with lifecycle hooks
+│   ├── tests/                    # Pytest suite with isolated test fixtures
+│   └── requirements.txt          # Python dependencies
 │
-├── .gitignore              # Ignores .venv, node_modules, .env, *.db, cache
-├── .env.example            # Root environment reference
+├── docs/screenshots/            # Output screenshots for project documentation
+├── BharatCode.txt                # Hackathon project metadata file
 └── README.md
 ```
 
-### Key Technical Decisions
+---
 
-- **Strict Decimal-Compatible Currency & Stock:** SQLite and SQLAlchemy use `Numeric(precision=10, scale=2, asdecimal=True)` and Python's `Decimal` to completely prevent floating-point rounding errors in retail pricing and billing.
-- **Data Integrity & Non-Destructive Deletion:** Foreign key constraints between `Product` and `InventoryTransaction` are configured with `ondelete="RESTRICT"`, preventing accidental destruction of historical stock audits. Soft-deletion is also supported via `is_active`.
-- **Database CHECK Constraints:** Both SQL-level constraints and Pydantic validation guarantee non-negative prices, non-negative stocks, and restricted transaction types.
-- **Repeatable Idempotent Seeding:** Initial retail sample data (10 realistic Indian FMCG products) is seeded safely without creating duplicates upon re-execution.
-- **Zero Heavy Infrastructure:** Uses local SQLite, eliminating Docker, Redis, or cloud dependencies in Phase 1.
+## Technology Stack
+
+- Frontend: React 19, TypeScript, Vite, Tailwind CSS v4, Motion (fluid spring physics), Lucide Icons
+- Backend: FastAPI, Python 3.12, SQLAlchemy, Pydantic v2, Uvicorn
+- Database: SQLite with ACID transaction guarantees and Decimal precision
+- AI Engine: BharatCode LLM API (with fallback support for Google Gemini 2.5 Flash Lite)
 
 ---
 
-## 2. Prerequisites
+## Installation and Setup
 
-- **Node.js**: `v18+` (Tested on `v22.23.2`)
-- **Python**: `3.10+` (Tested on `Python 3.12.10` / `Python 3.14`)
-- **Package Managers**: `npm` and `uv` (or `pip` / `venv`)
+### Prerequisites
+- Node.js version 18 or higher (tested on version 22)
+- Python version 3.10 or higher (tested on Python 3.12)
+- Package managers: npm, pip (or uv)
 
----
+### Backend Setup
 
-## 3. Quick Start & Setup
-
-### A. Backend Setup
-
-1. **Navigate to the backend directory:**
+1. Open a terminal and navigate to the backend directory:
    ```bash
    cd backend
    ```
 
-2. **Create and activate a virtual environment:**
-   Using `uv` (recommended):
-   ```bash
-   uv venv .venv
-   .venv\Scripts\activate   # On Windows
-   # source .venv/bin/activate  # On macOS/Linux
-   ```
-
-   Or using standard `python`:
+2. Create and activate a virtual environment:
    ```bash
    python -m venv .venv
-   .venv\Scripts\activate   # On Windows
-   # source .venv/bin/activate  # On macOS/Linux
+   .venv\Scripts\activate
+   # On macOS or Linux: source .venv/bin/activate
    ```
 
-3. **Install dependencies:**
+3. Install required packages:
    ```bash
    pip install -r requirements.txt
-   # or: uv pip install -r requirements.txt
    ```
 
-4. **Environment Configuration:**
+4. Configure environment variables:
    Copy `.env.example` to `.env`:
    ```bash
    cp .env.example .env
    ```
-
-5. **Start the FastAPI backend server:**
-   ```bash
-   uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+   Configure your BharatCode API key in `.env`:
+   ```env
+   BHARATCODE_API_KEY=your_bharatcode_api_key_here
    ```
 
-   The backend will automatically create `counterpilot.db` and idempotently seed the initial 10 Indian retail products on startup.
-   - API Health Check: [http://127.0.0.1:8000/api/health](http://127.0.0.1:8000/api/health)
-   - Interactive Swagger Docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+5. Start the backend application:
+   ```bash
+   uvicorn app.main:app --host 127.0.0.1 --port 8000
+   ```
 
----
+The backend automatically creates the SQLite database file (`counterpilot.db`) and seeds initial sample FMCG products on first launch.
+- Health Check: http://127.0.0.1:8000/api/health
+- Interactive Documentation: http://127.0.0.1:8000/docs
 
-### B. Frontend Setup
+### Frontend Setup
 
-1. **Navigate to the frontend directory:**
+1. Open a new terminal and navigate to the frontend directory:
    ```bash
    cd frontend
    ```
 
-2. **Install dependencies:**
+2. Install dependencies:
    ```bash
    npm install
    ```
 
-3. **Environment Configuration:**
-   Copy `.env.example` to `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-   *(Default: `VITE_API_BASE_URL=http://localhost:8000/api`)*
-
-4. **Start the Vite development server:**
+3. Start the Vite development server:
    ```bash
    npm run dev
    ```
 
-   Open your browser at [http://localhost:5173](http://localhost:5173).
+4. Open your browser and navigate to:
+   http://localhost:5173
 
 ---
 
-## 4. API Endpoints
+## API Reference
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/health` | Health status check (`{"status": "ok", "application": "CounterPilot"}`) |
-| `GET` | `/api/products` | Paginated product listing with `page`, `page_size`, `search`, `category`, and `low_stock` filters |
-| `GET` | `/api/products/summary` | Real-time foundational metrics: total products, low stock count, category count |
-| `GET` | `/api/products/{id}` | Detailed product record by ID |
-| `POST` | `/api/products` | Create new product with Pydantic validation and initial audit transaction |
+| `GET` | `/api/health` | Health check endpoint returning backend service status |
+| `GET` | `/api/settings` | Retrieve active store profile details |
+| `PUT` | `/api/settings` | Update store name, tagline, address, phone, and GSTIN |
+| `GET` | `/api/products` | Retrieve paginated products with search and low-stock filters |
+| `POST` | `/api/products` | Create a new product in the catalog |
+| `GET` | `/api/products/{id}` | Retrieve details of a specific product |
+| `PUT` | `/api/products/{id}` | Update existing product details, prices, or thresholds |
+| `POST` | `/api/products/{id}/restock` | Restock inventory quantity and log an audit transaction |
+| `DELETE` | `/api/products/{id}` | Soft-deactivate a product while preserving historical sales |
+| `POST` | `/api/sales` | Create a new counter bill with atomic inventory deduction |
+| `GET` | `/api/sales` | Retrieve paginated sales records |
+| `GET` | `/api/sales/{id}` | Retrieve specific sale details and line items |
+| `GET` | `/api/transactions` | Retrieve the immutable inventory audit log |
+| `POST` | `/api/assistant/chat` | Query the BharatCode AI copilot with live database context |
 
 ---
 
-## 5. Running Automated Tests
+## Test Verification
 
-Backend tests are implemented with `pytest` using isolated in-memory SQLite fixtures (`StaticPool`):
+CounterPilot includes automated backend testing with pytest and full TypeScript type verification.
 
+### Running Backend Tests
 ```bash
 cd backend
-.venv\Scripts\pytest -v
+.venv\Scripts\pytest -q
 ```
+Result: 44 passing tests covering product validations, idempotency, sales concurrency, stock rollback, restock audits, settings persistence, and AI assistant grounding.
 
-**Test Coverage Includes:**
-- System health check endpoint verification (`GET /api/health`).
-- Product listing with pagination, search, and low stock threshold filtering.
-- Seed idempotency verification (running multiple times produces 0 duplicate records).
-- Decimal price and stock validation (Pydantic 422 responses on negative inputs).
-- SQLite database CHECK constraints (IntegrityError on invalid database insertions).
-- Referential integrity and restricted deletion of products with historical inventory transactions.
-
----
-
-## 6. Frontend Build Verification
-
-To verify the production build of the React frontend:
-
+### Running Frontend Typecheck & Build
 ```bash
 cd frontend
 npm run build
 ```
-
-This validates TypeScript types (`tsc -b`) and generates production assets in `frontend/dist/`.
+Result: Clean compilation with 0 TypeScript errors.
 
 ---
 
-## 7. Next Steps for Phase 2
+## Hackathon Submission
 
-With the technical foundation in place, recommended milestones for Phase 2 are:
-1. **Sales & Billing Workflow:** Fast counter checkout with itemized cart and automatic inventory stock deduction.
-2. **Conversational AI Assistant:** Integrating natural language understanding for voice and chat queries ("Which items are low in stock?", "Record 2 packets of Maggi sold").
-3. **Receipt Generation:** Thermal print formatting (58mm/80mm) and WhatsApp/UPI shareable receipts.
-4. **Supplier Invoice Intake:** Parsing paper supplier invoices to automate bulk stock restocks.
-
+- Project Name: CounterPilot
+- Developer: Hrushikesh (GHrushikesh)
+- Repository: https://github.com/GHrushikesh/CounterPilot.git
+- Metadata File: `BharatCode.txt` located in the repository root.

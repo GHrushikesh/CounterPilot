@@ -160,6 +160,7 @@ class SaleService:
                         product_id=product.id,
                         product_name=product.name,
                         unit_price=product.selling_price,
+                        purchase_price_snapshot=product.purchase_price,
                         quantity=item_in.quantity,
                         total_price=item_total,
                     )

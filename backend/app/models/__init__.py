@@ -3,6 +3,7 @@ from app.models.inventory_transaction import InventoryTransaction, TransactionTy
 from app.models.sale import Sale, SaleItem, PaymentMethod, SaleStatus
 from app.models.idempotency import IdempotencyRecord
 from app.models.invoice_sequence import DailyInvoiceSequence
+from app.models.store_setting import StoreSetting
 
 __all__ = [
     "Product",
@@ -14,4 +15,5 @@ __all__ = [
     "SaleStatus",
     "IdempotencyRecord",
     "DailyInvoiceSequence",
+    "StoreSetting",
 ]

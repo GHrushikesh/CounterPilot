@@ -1,5 +1,5 @@
 import json
-from typing import List, Union
+from typing import List, Union, Optional
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -14,6 +14,17 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
         "http://localhost:3000",
     ]
+
+    # BharatCode Model API Configuration
+    BHARATCODE_API_KEY: Optional[str] = None
+    BHARATCODE_API_BASE_URL: str = "https://bharatcode.ai/api/model/v1"
+    BHARATCODE_MODEL: str = "qwen-3.8-27b"
+    BHARATCODE_TIMEOUT_SECONDS: float = 30.0
+
+    # Google Gemini Fallback / Testing Configuration
+    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_API_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta/openai"
+    GEMINI_MODEL: str = "gemini-2.5-flash-lite"
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
@@ -31,7 +42,7 @@ class Settings(BaseSettings):
         return ["*"]
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "backend/.env", "../.env"),
         env_file_encoding="utf-8",
         extra="ignore"
     )

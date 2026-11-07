@@ -32,6 +32,11 @@ class ProductUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 
+class ProductRestock(BaseModel):
+    quantity: Decimal = Field(..., gt=Decimal("0.00"), description="Quantity to add to stock")
+    note: Optional[str] = Field(default="Stock replenishment", max_length=255)
+
+
 class ProductResponse(ProductBase):
     id: int
     created_at: datetime

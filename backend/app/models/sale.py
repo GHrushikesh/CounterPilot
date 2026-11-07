@@ -89,6 +89,8 @@ class SaleItem(Base):
     )
     product_name = Column(String(255), nullable=False)
     unit_price = Column(Numeric(precision=10, scale=2, asdecimal=True), nullable=False)
+    purchase_price_snapshot = Column(Numeric(precision=10, scale=2, asdecimal=True), nullable=True)
+    purchase_price_snapshot = Column(Numeric(precision=10, scale=2, asdecimal=True), nullable=True)
     quantity = Column(Numeric(precision=10, scale=2, asdecimal=True), nullable=False)
     total_price = Column(Numeric(precision=10, scale=2, asdecimal=True), nullable=False)
 
@@ -97,6 +99,8 @@ class SaleItem(Base):
 
     __table_args__ = (
         CheckConstraint("unit_price >= 0", name="ck_sale_item_price_positive"),
+        CheckConstraint("purchase_price_snapshot IS NULL OR purchase_price_snapshot >= 0", name="ck_sale_item_purchase_snapshot_positive"),
+        CheckConstraint("purchase_price_snapshot IS NULL OR purchase_price_snapshot >= 0", name="ck_sale_item_purchase_snapshot_positive"),
         CheckConstraint("quantity > 0", name="ck_sale_item_qty_positive"),
         CheckConstraint("total_price >= 0", name="ck_sale_item_total_positive"),
     )

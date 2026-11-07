@@ -28,6 +28,36 @@ class ConflictException(CounterPilotException):
         super().__init__(message=message, status_code=status.HTTP_409_CONFLICT, error_code=error_code)
 
 
+class AssistantConfigurationException(CounterPilotException):
+    def __init__(self, message: str = "BharatCode API key is not configured.", error_code: str = "ASSISTANT_NOT_CONFIGURED"):
+        super().__init__(message=message, status_code=status.HTTP_503_SERVICE_UNAVAILABLE, error_code=error_code)
+
+
+class AssistantAuthException(CounterPilotException):
+    def __init__(self, message: str = "BharatCode authentication failed.", error_code: str = "ASSISTANT_AUTH_ERROR"):
+        super().__init__(message=message, status_code=status.HTTP_502_BAD_GATEWAY, error_code=error_code)
+
+
+class AssistantRateLimitException(CounterPilotException):
+    def __init__(self, message: str = "BharatCode rate limit reached.", error_code: str = "ASSISTANT_RATE_LIMIT"):
+        super().__init__(message=message, status_code=status.HTTP_429_TOO_MANY_REQUESTS, error_code=error_code)
+
+
+class AssistantBusyException(CounterPilotException):
+    def __init__(self, message: str = "BharatCode AI service is currently busy.", error_code: str = "ASSISTANT_BUSY"):
+        super().__init__(message=message, status_code=status.HTTP_503_SERVICE_UNAVAILABLE, error_code=error_code)
+
+
+class AssistantTimeoutException(CounterPilotException):
+    def __init__(self, message: str = "BharatCode AI model request timed out.", error_code: str = "ASSISTANT_TIMEOUT"):
+        super().__init__(message=message, status_code=status.HTTP_504_GATEWAY_TIMEOUT, error_code=error_code)
+
+
+class AssistantMalformedException(CounterPilotException):
+    def __init__(self, message: str = "Unexpected response from BharatCode API.", error_code: str = "ASSISTANT_MALFORMED_RESPONSE"):
+        super().__init__(message=message, status_code=status.HTTP_502_BAD_GATEWAY, error_code=error_code)
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(CounterPilotException)
     async def custom_exception_handler(request: Request, exc: CounterPilotException):

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Printer, CheckCircle, X } from 'lucide-react';
 import type { Sale } from '../../types';
+import { useStore } from '../../context/StoreContext';
 
 interface ReceiptModalProps {
   sale: Sale;
@@ -13,6 +14,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   onClose,
   onNewSale,
 }) => {
+  const { shopName, settings } = useStore();
   const formatCurrency = (val: string | number) => {
     const num = typeof val === 'number' ? val : parseFloat(val);
     return new Intl.NumberFormat('en-IN', {
@@ -32,17 +34,17 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs print:p-0 print:bg-white print:static print:inset-auto">
-      <div className="bg-white rounded-lg shadow-xl max-w-sm w-full overflow-hidden border border-slate-200 print:shadow-none print:border-none print:max-w-none print:w-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md print:p-0 print:bg-white print:static print:inset-auto transition-opacity duration-200">
+      <div className="apple-card animate-apple-sheet max-w-sm w-full overflow-hidden print:shadow-none print:border-none print:max-w-none print:w-auto shadow-2xl">
         {/* Header - Hidden on Print */}
-        <div className="flex items-center justify-between p-3.5 border-b border-slate-100 bg-emerald-50/70 print:hidden">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-800">
-            <CheckCircle className="w-4 h-4 text-emerald-600" />
+        <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-orange-500/10 print:hidden">
+          <div className="flex items-center gap-2 text-xs font-semibold text-orange-900 tracking-tight">
+            <CheckCircle className="w-4 h-4 text-orange-600" />
             <span>Bill Generated Successfully</span>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 active:scale-95 transition-all"
           >
             <X className="w-4 h-4" />
           </button>
@@ -55,10 +57,18 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         >
           <div className="text-center border-b border-dashed border-slate-300 pb-3 mb-3">
             <h2 className="font-bold text-sm tracking-wider uppercase text-slate-900 print:text-black">
-              Ujjam Computers
+              {shopName}
             </h2>
-            <p className="text-[10px] text-slate-500 print:text-black">Retail Operating Counter</p>
-            <p className="text-[10px] text-slate-400 print:text-gray-600">GSTIN: Unregistered Retailer</p>
+            <p className="text-[10px] text-slate-500 print:text-black">{settings?.tagline || 'Retail Operating Counter'}</p>
+            {settings?.address && (
+              <p className="text-[10px] text-slate-500 print:text-black">{settings.address}</p>
+            )}
+            {settings?.phone && (
+              <p className="text-[10px] text-slate-500 print:text-black">Ph: {settings.phone}</p>
+            )}
+            <p className="text-[10px] text-slate-400 print:text-gray-600">
+              GSTIN: {settings?.gstin || 'Unregistered Retailer'}
+            </p>
           </div>
 
           <div className="text-[11px] space-y-1 mb-3 text-slate-600 print:text-black">
@@ -78,7 +88,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             )}
             <div className="flex justify-between">
               <span>Payment Mode:</span>
-              <span className="font-semibold text-emerald-700 print:text-black">{sale.payment_method}</span>
+              <span className="font-semibold text-orange-800 print:text-black">{sale.payment_method}</span>
             </div>
           </div>
 
@@ -111,7 +121,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
               <span>{formatCurrency(sale.subtotal)}</span>
             </div>
             {parseFloat(String(sale.discount_amount)) > 0 && (
-              <div className="flex justify-between text-emerald-700 print:text-black">
+              <div className="flex justify-between text-orange-700 print:text-black">
                 <span>Discount:</span>
                 <span>- {formatCurrency(sale.discount_amount)}</span>
               </div>
@@ -131,14 +141,14 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2 print:hidden">
           <button
             onClick={handlePrint}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded shadow-2xs"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg shadow-2xs active:scale-95 transition-all"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>Print Receipt</span>
           </button>
           <button
             onClick={onNewSale}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded shadow-2xs"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-2xs active:scale-95 transition-all"
           >
             <span>Next Sale</span>
           </button>

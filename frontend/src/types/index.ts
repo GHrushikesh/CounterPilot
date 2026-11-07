@@ -47,6 +47,7 @@ export interface SaleItem {
   product_id: number;
   product_name: string;
   unit_price: string | number;
+  purchase_price_snapshot?: string | number | null;
   quantity: string | number;
   total_price: string | number;
 }
@@ -91,3 +92,61 @@ export interface TransactionItem {
   note: string | null;
   created_at: string;
 }
+
+export interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+export interface AssistantChatRequest {
+  message: string;
+  history?: ChatMessage[];
+  conversation_id?: string;
+}
+
+export interface AssistantChatResponse {
+  reply: string;
+  conversation_id: string;
+  model: string;
+  ground_truth_context?: Record<string, any>;
+}
+
+export interface ProductCreatePayload {
+  name: string;
+  category: string;
+  sku?: string | null;
+  selling_price: number;
+  purchase_price: number;
+  current_stock: number;
+  minimum_stock: number;
+  unit: string;
+}
+
+export interface ProductUpdatePayload {
+  name?: string;
+  category?: string;
+  sku?: string | null;
+  selling_price?: number;
+  purchase_price?: number;
+  current_stock?: number;
+  minimum_stock?: number;
+  unit?: string;
+  is_active?: boolean;
+}
+
+export interface ProductRestockPayload {
+  quantity: number;
+  note?: string;
+}
+
+export interface StoreSetting {
+  id?: number;
+  shop_name: string;
+  tagline?: string;
+  address?: string;
+  phone?: string;
+  gstin?: string;
+  currency?: string;
+  currency_symbol?: string;
+}
+

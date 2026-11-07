@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { apiService } from '../../services/api';
-import { Activity, AlertCircle } from 'lucide-react';
 
 export const StatusIndicator: React.FC = () => {
   const [status, setStatus] = useState<'checking' | 'online' | 'offline'>('checking');
-  const [backendApp, setBackendApp] = useState<string>('');
 
   useEffect(() => {
     let isMounted = true;
@@ -13,12 +11,7 @@ export const StatusIndicator: React.FC = () => {
       try {
         const res = await apiService.getHealth();
         if (isMounted) {
-          if (res.status === 'ok') {
-            setStatus('online');
-            setBackendApp(res.application);
-          } else {
-            setStatus('offline');
-          }
+          setStatus(res.status === 'ok' ? 'online' : 'offline');
         }
       } catch {
         if (isMounted) {
@@ -37,26 +30,26 @@ export const StatusIndicator: React.FC = () => {
 
   if (status === 'checking') {
     return (
-      <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-slate-500 bg-slate-100 rounded-full border border-slate-200">
-        <Activity className="w-3.5 h-3.5 animate-pulse text-slate-400" />
-        <span>Connecting API</span>
+      <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-slate-400 font-medium">
+        <span className="w-1.5 h-1.5 rounded-full bg-slate-300 animate-pulse"></span>
+        <span>Connecting</span>
       </div>
     );
   }
 
   if (status === 'online') {
     return (
-      <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-emerald-800 bg-emerald-50 rounded-full border border-emerald-200">
-        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span>{backendApp || 'API Connected'}</span>
+      <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-slate-600 apple-glass-button rounded-full shadow-2xs">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+        <span className="tracking-tight">System Live</span>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-rose-800 bg-rose-50 rounded-full border border-rose-200">
-      <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
-      <span>Backend Offline</span>
+    <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-rose-700 bg-rose-50/80 rounded-full border border-rose-200/80">
+      <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+      <span>Offline</span>
     </div>
   );
 };
