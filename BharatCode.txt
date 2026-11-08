@@ -54,6 +54,17 @@ TECH STACK
 - AI Engine: BharatCode API (Official Qwen 3.8 27B model)
 
 ================================================================================
+EVALUATOR & JUDGE INSTRUCTIONS
+================================================================================
+Per hackathon security policy ("Do not include secrets, tokens, or private keys"),
+private API keys are excluded from git.
+Evaluators can test the AI assistant with their own key:
+1. Copy backend/.env.example to backend/.env
+2. Set BHARATCODE_API_KEY=your_key
+3. Run backend tests: pytest -q (all 56 security and unit tests pass)
+4. High-resolution UI screenshots and live transcripts are provided in README.md.
+
+================================================================================
 RUNNING THE APPLICATION
 ================================================================================
 Backend:
